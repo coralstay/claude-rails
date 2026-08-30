@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/session-start.sh" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/require-active-task.sh" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "if": "Bash(git commit *)", "command": "bash $HOME/.claude/hooks/claude-rails/pre-commit-check.sh" },
+          { "type": "command", "if": "Bash(git push *)", "command": "bash $HOME/.claude/hooks/claude-rails/pre-push-check.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/block-stop-if-dirty.sh" }
+        ]
+      }
+    ]
+  }
+}
