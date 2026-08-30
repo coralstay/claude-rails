@@ -90,7 +90,8 @@ CLAUDE.md는 마커로 중복 방지).
     (관련 결정/문서가 있으면 --ref/--doc으로 반드시 연결)
 
 🧑  ★ Claude가 board를 보여주면, 사람이 실제로 보고 승인/수정 지시
-    (여기서 멈추지 않으면 Claude가 다음으로 못 넘어감 — 유일한 필수 HIL)
+    (여기서 멈추지 않으면 Claude가 다음으로 못 넘어감 — 필수 HIL 중 하나, 다른 하나는
+    아래 push 직전에 나옴)
 
 ⚙️  Claude가 backlog task view TASK-12 --plain 으로 태스크 정독
 🤖  이걸 안 하면 다음 Edit/Write가 훅에 막힘
@@ -110,12 +111,18 @@ CLAUDE.md는 마커로 중복 방지).
     (스코프를 넓힐지, 별도 태스크로 뺄지 — 조용히 확장 안 함)
 
 ⚙️  Claude가 backlog task edit --check-ac 1 --final-summary "..." -s Done
+
+🧑  ★ push하기 전에 사람이 diff/커밋 로그를 실제로 검토
+    (훅은 상태(Done)와 final summary 존재만 확인할 뿐, 코드 내용은 못 봄 — 여기서
+    사람이 안 보면 아무도 안 본 채로 push된다)
+
 ⚙️  Claude가 git push
 🤖  push 시점에 태스크가 Done 상태이고 final summary가 있는지 훅이 확인
 ```
 
-이 흐름에서 **사람이 반드시 해야 하는 일은 딱 하나**다 — 백로그를 만들었을 때 보고
-승인하는 것. 나머지는 Claude가 알아서 하거나, 어기면 훅이 막는다.
+이 흐름에서 **사람이 반드시 해야 하는 일은 두 가지**다 — 백로그를 만들었을 때 보고
+승인하는 것, 그리고 push하기 전에 실제로 diff를 검토하는 것. 나머지는 Claude가 알아서
+하거나, 어기면 훅이 막는다.
 
 ---
 
@@ -165,10 +172,10 @@ Progress 태스크 없이는 이후 어떤 Edit/Write도 불가.
 | 1.6 | 관련 doc/외부링크 연결 | `--doc <path\|url>` → frontmatter `documentation:` |
 | 1.7 | 결과 보고 | 태스크 ID/제목/AC 리스트업 |
 
-### Phase 2. 검토 게이트 🧑 ★★★ — 유일한 필수 HIL
+### Phase 2. 검토 게이트 🧑 ★★★ — 필수 HIL
 
-전체 프로세스에서 **훅으로 대체 불가능한 유일한 지점**. 사람이 실제로 백로그를 보고
-승인해야만 Phase 3가 시작된다.
+전체 프로세스에서 **훅으로 대체 불가능한 지점** 중 하나(다른 하나는 Phase 4.3 push 전
+코드 리뷰). 사람이 실제로 백로그를 보고 승인해야만 Phase 3가 시작된다.
 
 | # | 액션 | 커맨드 |
 |---|---|---|
@@ -191,17 +198,18 @@ Progress 태스크 없이는 이후 어떤 Edit/Write도 불가.
 | 3-6 서브태스크 처리 | 서브태스크 1개만 할당 시 다음으로 자동 진행 금지 | 🧑? 1개만 할당된 경우에만 |
 | 3-7 완료 전환 | 증거(테스트 통과 로그 등) 확보 후에만 AC 체크 | ⚙️ 판단 영역, 자동 검증 미구현 |
 
-### Phase 4. 완료 & 종결 🤖
+### Phase 4. 완료 & 종결 🧑 + 🤖
 
 | # | 액션 | 커맨드/강제 |
 |---|---|---|
 | 4.1 | AC/DoD 체크, final-summary 작성 | `task edit --check-ac/--check-dod/--final-summary` |
 | 4.2 | 상태 전환 | `task edit -s Done` |
-| 4.3 | push 전 상태 확인 | 🤖 `task/<ID>` 브랜치 push 시 status=Done && final summary 존재 확인 |
-| 4.4 | Push (기능/Story 단위) | `git push` |
-| 4.5 | 태스크 아카이브 | `task complete TASK-ID` |
-| 4.6 | Epic 완료 시 | `milestone archive` |
-| 4.7 | (대안) 취소 경로 | `task archive` / `milestone remove/rename` |
+| 4.3 | **코드 리뷰** | 🧑 사람이 diff/커밋 로그를 실제로 검토 — push 전 필수 HIL |
+| 4.4 | push 전 상태 확인 | 🤖 `task/<ID>` 브랜치 push 시 status=Done && final summary 존재 확인 |
+| 4.5 | Push (기능/Story 단위) | `git push` |
+| 4.6 | 태스크 아카이브 | `task complete TASK-ID` |
+| 4.7 | Epic 완료 시 | `milestone archive` |
+| 4.8 | (대안) 취소 경로 | `task archive` / `milestone remove/rename` |
 
 ### Phase 5. 주기적 유지보수 ⚙️
 
@@ -222,10 +230,14 @@ Progress 태스크 없이는 이후 어떤 Edit/Write도 불가.
 |---|---|---|---|
 | Phase -1 셋업 | 필수 | 항상 (최초 1회) | 대체 불가 — 사람의 결정 |
 | Phase 0 브리핑 | 필수 | 항상 (요청 자체가 사람에게서 시작) | 대체 불가 |
-| **Phase 2 검토 게이트** | **필수** | **항상, 예외 없음** | **대체 불가 — 프로세스의 핵심 HIL** |
+| **Phase 2 검토 게이트** | **필수** | **항상, 예외 없음** | **대체 불가 — 백로그 내용은 사람 판단** |
 | 3-3 승인 게이트 | 조건부 | 중대 설계/아키텍처 결정 포함 시 | Plan Mode로 흡수(이미 존재) |
 | 3-5 스코프 이탈 | 조건부 | AC 밖 작업 발견 시 | 부분 대체 가능(LLM 판단형 훅, 미구현) |
 | 3-6 서브태스크 | 조건부 | 서브태스크 1개만 할당 시 | 대체 어려움(판단 영역) |
+| **Phase 4.3 push 전 코드 리뷰** | **필수** | **매 push 전, 예외 없음** | **대체 불가 — 코드 내용은 사람 판단.** 현재 이 리뷰 자체를 확인하는 훅은 없음 — `pre-push-check.sh`는 상태(Done)와 final summary 존재만 확인하고, "사람이 실제로 봤는지"는 검증하지 못함 |
+
+Phase 2와 Phase 4.3, 두 곳 모두 **항상, 예외 없이** 발생하는 필수 HIL이다 — 나머지(3-3/3-5/3-6)는
+특정 조건에서만 발생하는 조건부 HIL이라는 점에서 구분된다.
 
 ---
 
