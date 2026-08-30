@@ -57,15 +57,16 @@ CLAUDE.md는 마커로 중복 방지).
    충족시킨 뒤 다시 시도한다.
 
 즉 이 저장소가 하는 일은 **"Claude Code 세션 중간중간에 끼어들어서, backlog 프로젝트일
-때만, 정해진 조건이 아니면 액션을 거부하는 작은 셸 스크립트 5개 + 안내 스크립트 1개"**다.
+때만, 정해진 조건이 아니면 액션을 거부하는 차단 스크립트 4개 + 세션 시작 시 브리핑만
+하는 스크립트 1개(+ 둘 다 쓰는 공용 함수 파일 1개)"**다.
 
 ---
 
 ## 4. 사용 흐름 — 태스크 하나 따라가기
 
 까먹고 다시 왔을 때 이 섹션만 봐도 바로 쓸 수 있게, 실제로 손으로 치는 순서를 그대로
-적는다. (🧑 = 사람이 직접 함, 🤖 = Claude가 하는데 훅이 조건을 강제함, ⚙️ = Claude가
-자동으로 함)
+적는다. (🧑 = 사람이 직접 함, 🧑? = 특정 상황에서만 사람에게 물어봄, 🤖 = Claude가 하는데
+훅이 조건을 강제함, ⚙️ = Claude가 자동으로 함)
 
 ```
 🧑  "이 프로젝트에 로그인 기능 추가해줘" 라고 프롬프트
@@ -246,7 +247,7 @@ no_active_task(dir):  `backlog task list --status "In Progress" --plain` 결과�
 
 ### `pre-commit-check.sh` — `PreToolUse`, matcher `Bash`, `if: "Bash(git commit *)"`
 ```
-1. backlog 프로젝트 아님 → exit 0
+1. backlog CLI 없음 또는 backlog 프로젝트 아님 → exit 0
 2. In Progress 태스크 있음 && 브랜치명이 "task/"로 시작 안 함 → deny
 3. .claude-rails.json 있고 testCommand 설정됨 && 그 커맨드 exit≠0 → deny
 4. 통과 → exit 0
@@ -255,14 +256,14 @@ no_active_task(dir):  `backlog task list --status "In Progress" --plain` 결과�
 
 ### `block-stop-if-dirty.sh` — `Stop`
 ```
-1. backlog 프로젝트 아님 또는 In Progress 태스크 없음 → exit 0
+1. backlog CLI 없음 또는 backlog 프로젝트 아님 또는 In Progress 태스크 없음 → exit 0
 2. git status --porcelain 결과 있음(커밋 안 된 변경) → deny (턴 종료 차단)
 3. 통과 → exit 0
 ```
 
 ### `pre-push-check.sh` — `PreToolUse`, matcher `Bash`, `if: "Bash(git push *)"`
 ```
-1. backlog 프로젝트 아님 → exit 0
+1. backlog CLI 없음 또는 backlog 프로젝트 아님 → exit 0
 2. 브랜치명이 "task/"로 시작 안 함 → exit 0 (이 훅은 task 브랜치만 검사)
 3. task_id = 브랜치명에서 "task/" 뗀 나머지
 4. `backlog task view <task_id> --json` 조회 실패 → exit 0

@@ -8,6 +8,7 @@ source "$DIR/_lib.sh"
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.cwd')
 
+command -v backlog >/dev/null 2>&1 || exit 0
 is_backlog_project "$cwd" || exit 0
 no_active_task "$cwd" && exit 0
 
