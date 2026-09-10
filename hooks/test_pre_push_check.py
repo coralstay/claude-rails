@@ -47,7 +47,9 @@ def test_denies_when_not_done(monkeypatch, capsys):
     monkeypatch.setattr(ppc, "is_backlog_project", lambda cwd: True)
     monkeypatch.setattr(ppc, "current_branch", lambda cwd: "task/TASK-3")
     monkeypatch.setattr(
-        ppc, "task_view", lambda cwd, task_id: {"task": {"status": "In Progress", "finalSummary": ""}}
+        ppc,
+        "task_view",
+        lambda cwd, task_id: {"task": {"status": "In Progress", "finalSummary": ""}},
     )
     code = run_main(monkeypatch, {"cwd": "/x", "tool_input": PUSH})
     assert code == 2
@@ -59,7 +61,9 @@ def test_denies_when_done_but_no_summary(monkeypatch, capsys):
     monkeypatch.setattr(ppc, "is_backlog_project", lambda cwd: True)
     monkeypatch.setattr(ppc, "current_branch", lambda cwd: "task/TASK-3")
     monkeypatch.setattr(
-        ppc, "task_view", lambda cwd, task_id: {"task": {"status": "Done", "finalSummary": "   "}}
+        ppc,
+        "task_view",
+        lambda cwd, task_id: {"task": {"status": "Done", "finalSummary": "   "}},
     )
     code = run_main(monkeypatch, {"cwd": "/x", "tool_input": PUSH})
     assert code == 2
@@ -71,7 +75,9 @@ def test_passes_when_done_with_summary(monkeypatch):
     monkeypatch.setattr(ppc, "is_backlog_project", lambda cwd: True)
     monkeypatch.setattr(ppc, "current_branch", lambda cwd: "task/TASK-3")
     monkeypatch.setattr(
-        ppc, "task_view", lambda cwd, task_id: {"task": {"status": "Done", "finalSummary": "Shipped."}}
+        ppc,
+        "task_view",
+        lambda cwd, task_id: {"task": {"status": "Done", "finalSummary": "Shipped."}},
     )
     assert run_main(monkeypatch, {"cwd": "/x", "tool_input": PUSH}) == 0
 
@@ -121,11 +127,15 @@ def test_denies_bare_git_dash_c_push_when_not_done(monkeypatch, capsys):
     monkeypatch.setattr(ppc, "is_backlog_project", lambda cwd: True)
     monkeypatch.setattr(ppc, "current_branch", lambda cwd: "task/TASK-3")
     monkeypatch.setattr(
-        ppc, "task_view", lambda cwd, task_id: {"task": {"status": "In Progress", "finalSummary": ""}}
+        ppc,
+        "task_view",
+        lambda cwd, task_id: {"task": {"status": "In Progress", "finalSummary": ""}},
     )
     stdin_data = {
         "cwd": "/x",
-        "tool_input": {"command": "git -C /Users/flynn_macpro/claude-settings push -u origin task/TASK-3"},
+        "tool_input": {
+            "command": "git -C /home/user/project push -u origin task/TASK-3"
+        },
     }
     code = run_main(monkeypatch, stdin_data)
     assert code == 2
@@ -169,12 +179,27 @@ def test_command_invokes_git_subcommand_falls_back_on_unparsable_command():
 
 def test_current_branch_real_git(tmp_path):
     subprocess.run(
-        ["git", "init", "-q", "-b", "task/TASK-9"], cwd=tmp_path, check=True, capture_output=True
+        ["git", "init", "-q", "-b", "task/TASK-9"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
     )
     (tmp_path / "f.txt").write_text("hi")
-    subprocess.run(["git", "add", "f.txt"], cwd=tmp_path, check=True, capture_output=True)
     subprocess.run(
-        ["git", "-c", "user.email=t@example.com", "-c", "user.name=T", "commit", "-q", "-m", "init"],
+        ["git", "add", "f.txt"], cwd=tmp_path, check=True, capture_output=True
+    )
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=T",
+            "commit",
+            "-q",
+            "-m",
+            "init",
+        ],
         cwd=tmp_path,
         check=True,
         capture_output=True,
