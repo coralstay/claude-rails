@@ -7,6 +7,63 @@ Claude Code로 프로젝트를 진행할 때 [Backlog.md](https://github.com/MrL
 
 ---
 
+## 0. 이 저장소가 존재하는 실제 맥락 — 왜 "개인 레포까지만"인가
+
+이 저장소가 강제하는 워크플로는 실제 업무 프로세스 하나를 전제로 한다:
+
+```
+운영(production) 레포                개인 레포 (fork)                 사람
+─────────────────────    fork    ─────────────────────
+[anthropics/claude-code]  ─────▶  내 계정의 fork            ◀── Claude가 여기서 작업
+[anthropics/claude-cookbooks]                                   (CI 게이트까지 전부 통과)
+                                          │
+                                          │  PR은 반드시 사람이
+                                          ▼
+                                   운영 레포로 Pull Request  ◀── 사람이 직접
+```
+
+- **개인 레포(fork)**: Claude가 자유롭게 작업하는 곳. 이 저장소의 훅들이 강제하는 "태스크
+  기반 작업, 테스트 통과 후 커밋, dirty 상태로 턴 종료 금지" 같은 규칙은 전부 **여기까지만**
+  적용된다 — 개인 레포 안에서는 CI 게이트(커밋/푸시 전 검증)까지 Claude가 전부 통과시켜야
+  한다.
+- **운영 레포(production)**: 실제 업스트림 프로젝트. 여기로의 Pull Request는 **항상 사람이
+  직접** 연다 — Claude가 대신 열지 않는다. `gh pr merge`처럼 "이미 만들어진 PR을 머지"하는
+  것과, "운영 레포에 새 PR을 여는 것"은 이 저장소 안에서 전혀 다른 신뢰 레벨로 취급된다.
+- **이 레포 자체가 삽질 기록소다**: 개인 레포에서 Claude와 함께 작업하다 만난 훅의 구멍,
+  잘못 짠 안전장치, 헷갈렸던 판단들을 [`삽질기록.md`](./삽질기록.md)에 전부 남긴다. 잊어버려도
+  이 파일 하나만 보면 "아, 그때 이래서 이렇게 고쳤었지"를 복원할 수 있게 하는 게 목적이다.
+
+이 저장소가 실제로 참고하고 맞대어보는 두 업스트림 프로젝트:
+
+- [anthropics/claude-cookbooks](https://github.com/anthropics/claude-cookbooks)
+- [anthropics/claude-code](https://github.com/anthropics/claude-code)
+
+### 개인 레포에서 PR/이슈 한눈에 보기 — Claude 사고 선제 대응
+
+개인 레포에서 Claude가 연 PR과, 그 과정에서 발견된 문제를 적어둔 Issue를 한 화면에서 같이
+보면 "Claude가 이상한 소리를 했거나 사고를 쳤을 때" 더 빨리 알아챌 수 있다. `gh`는 PR과
+Issue를 각각 따로 조회하는 명령만 제공하므로(자동 동기화 기능은 없음), 한 저장소 기준으로
+둘을 나란히 보려면:
+
+```bash
+# 열려있는 PR + 열려있는 Issue를 한 화면에
+gh pr list --repo <owner>/<repo> && echo "---" && gh issue list --repo <owner>/<repo>
+
+# 최근 활동순으로 둘 다 보고 싶으면(더 빠르게 이상 징후 포착)
+gh pr list --repo <owner>/<repo> --json number,title,updatedAt,author \
+  --jq '.[] | "[PR]  #\(.number)  \(.updatedAt)  \(.title)"'
+gh issue list --repo <owner>/<repo> --json number,title,updatedAt,author \
+  --jq '.[] | "[ISSUE]  #\(.number)  \(.updatedAt)  \(.title)"'
+```
+
+**관례**: Claude가 뭔가 잘못 판단했거나("헛소리"), 작업 중 사고를 쳤을 때는 그 자리에서 고치고
+끝내지 말고 GitHub Issue로 남긴다 — 제목에 `[claude-incident]` 접두어를 붙이고, 원인이 된 PR
+번호를 본문에 링크한다. 이렇게 쌓인 Issue 목록 자체가 "Claude를 믿고 맡겨도 되는 범위가
+어디까지인지"에 대한 누적 기록이 된다. (자동화된 PR↔Issue 연동 봇은 아직 없음 — 필요해지면
+`10. 알려진 한계 / 다음 단계`에 추가할 것.)
+
+---
+
 ## 1. 왜 이게 있는가
 
 Claude에게 "이 순서로 작업해줘"라고 CLAUDE.md에 적어두는 것만으로는 매번 지켜지지
@@ -460,6 +517,10 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 - **관측 훅들의 로그가 계속 쌓임**: `session_logger.py`/`nerf_receipts.py`/
   `pre_compact_backup.py`/`standup_autopilot.py` 등이 `~/.claude/hooks-logs/` 아래에
   JSONL/마크다운을 계속 적재한다 — 로테이션/정리 메커니즘은 아직 없다.
+- **PR↔Issue 자동 연동 없음**: 0장에서 설명한 `[claude-incident]` Issue 관례는 사람이
+  수동으로 남기는 것이고, PR과 Issue를 자동으로 서로 링크/동기화해주는 봇/Action은 아직
+  없다. 필요해지면 `gh pr comment`로 관련 Issue 번호를 자동 코멘트하는 GitHub Action 정도가
+  다음 후보.
 
 ---
 
