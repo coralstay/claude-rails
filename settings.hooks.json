@@ -3,7 +3,44 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/session-start.sh" }
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/session_start.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/session_logger.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dead_rules_audit.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/standup_autopilot.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/bounty_board.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/instructions_audit.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/session_logger.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dead_end_registry.py"
+          }
         ]
       }
     ],
@@ -11,21 +48,218 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/require-active-task.sh" }
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/require_active_task.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dead_end_registry.py"
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "if": "Bash(git commit *)", "command": "bash $HOME/.claude/hooks/claude-rails/pre-commit-check.sh" },
-          { "type": "command", "if": "Bash(git push *)", "command": "bash $HOME/.claude/hooks/claude-rails/pre-push-check.sh" }
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_commit_check.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_push_check.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_push_coverage_check.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_merge_check.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/block_dangerous_commands.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_git_safety_check.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/case_insensitive_guard.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pr_provenance_stamp.py",
+            "if": "Bash(gh pr create*)"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/protect_secrets.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/protect_tests.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/config_guard.py"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/instructions_audit.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/session_logger.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/nerf_receipts.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/auto_stage.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/format_code.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dead_rules_audit.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/bounty_board.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/context_hogs.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/nerf_receipts.py"
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "bash $HOME/.claude/hooks/claude-rails/block-stop-if-dirty.sh" }
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/block_stop_if_dirty.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/nerf_receipts.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/standup_autopilot.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/session_logger.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dead_rules_audit.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/standup_autopilot.py"
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "matcher": "user_settings|project_settings|local_settings|policy_settings|skills",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/config_watch.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_compact_backup.py"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/permission_auto_allow.py"
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/instructions_audit.py"
+          }
         ]
       }
     ]

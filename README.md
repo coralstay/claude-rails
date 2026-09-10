@@ -1,9 +1,9 @@
 # claude-rails
 
 Claude Code로 프로젝트를 진행할 때 [Backlog.md](https://github.com/MrLesk/Backlog.md)를
-함께 쓰면서 지키고 싶은 개인 작업 흐름을, "매번 까먹지 않고" 적용되도록 만든 전역 설정
-저장소. 이 문서 하나만 읽으면 이게 뭔지, 왜 있는지, 지금 뭐가 어떻게 동작하는지, 실제로
-어떻게 쓰는지 전부 알 수 있게 쓴다.
+함께 쓰면서 지키고 싶은 개인 작업 흐름과, 프로젝트 종류와 무관하게 항상 지키고 싶은 안전/관측
+규칙을, "매번 까먹지 않고" 적용되도록 만든 전역 설정 저장소. 이 문서 하나만 읽으면 이게
+뭔지, 왜 있는지, 지금 뭐가 어떻게 동작하는지, 실제로 어떻게 쓰는지 전부 알 수 있게 쓴다.
 
 ---
 
@@ -13,7 +13,8 @@ Claude에게 "이 순서로 작업해줘"라고 CLAUDE.md에 적어두는 것만
 않는다. 그래서 두 가지로 나눴다:
 
 - **실제로 반드시 막아야 하는 지점** (태스크 없이 코드부터 수정, 테스트 없이 커밋, 커밋
-  안 하고 턴 종료, 미완료 상태로 push) → Claude Code의 [hooks](https://code.claude.com/docs/en/hooks)로
+  안 하고 턴 종료, 미완료 상태로 push, 시크릿 파일 열람, 위험한 셸 명령, 훅/설정 자체
+  변조 등) → Claude Code의 [hooks](https://code.claude.com/docs/en/hooks)로
   **물리적으로 차단**한다. Claude가 어겨도 액션 자체가 실행되지 않는다.
 - **판단이 필요한 지점** (계획이 충분히 조사됐는지, 지금 하는 일이 스코프를 벗어났는지) →
   훅으로 강제할 수 없으므로 CLAUDE.md 안내에 맡기고, 대신 **사람에게 반드시 물어보게**
@@ -22,20 +23,43 @@ Claude에게 "이 순서로 작업해줘"라고 CLAUDE.md에 적어두는 것만
 이 둘을 구분하지 않으면 "강제한다고 해놓고 사실은 안 지켜지는" 문서만 늘어난다. 이
 저장소는 그 구분을 실제 코드(훅 스크립트)로 못박아 둔 것이다.
 
+**범위가 두 겹으로 나뉘어 있다는 점이 중요하다.** 애초 이 저장소는 backlog.md 워크플로
+전용이었지만(5개 훅), 지금은 그 위에 프로젝트가 backlog.md를 쓰든 안 쓰든 항상 적용되는
+범용 안전/관측 훅 22개가 더해져 총 27개가 됐다:
+
+- **backlog.md 워크플로 전용** (5개, `backlog/config.yml`이 있는 프로젝트에서만 동작) —
+  `session_start.py`, `require_active_task.py`, `pre_commit_check.py`,
+  `pre_push_check.py`, `block_stop_if_dirty.py`. 원래 bash로 있던 것과 1:1 대응된다.
+- **범용 안전/관측 훅** (22개, backlog.md 여부와 무관하게 항상 동작) — 시크릿 보호,
+  위험 명령 차단, 설정 변조 감시, 세션 로깅, PR 리뷰 보조 등. 대부분
+  [karanb192/claude-code-hooks](https://github.com/karanb192/claude-code-hooks)와
+  [disler/claude-code-hooks-mastery](https://github.com/disler/claude-code-hooks-mastery)의
+  MIT 라이선스 플러그인을 포팅한 것이다 (8장에 훅별로 출처 표시).
+
+즉 "어기면 물리적으로 막는다"는 원칙은 그대로지만, 이제 그 적용 대상이 "백로그
+프로젝트의 워크플로 위반"만이 아니라 "이 컴퓨터에서 Claude Code가 하는 모든 위험한
+행동"까지 넓어졌다.
+
 ---
 
 ## 2. 지금 이 컴퓨터에 뭐가 설치돼 있는가
 
-전역 설치되어 있어 **backlog.md가 초기화된 모든 프로젝트에서, 매 세션 자동으로 적용**된다.
-설치 안 된 프로젝트(backlog.md 안 쓰는 프로젝트)는 전혀 영향받지 않는다.
+전역 설치되어 있어 **모든 세션에 자동으로 적용**된다. 다만 1장에서 설명했듯 27개 중
+5개(backlog.md 워크플로 훅)만 `backlog/config.yml`이 있는 프로젝트로 한정되고, 나머지
+22개는 프로젝트 종류와 무관하게 항상 동작한다.
 
-| 항목 | 경로 |
-|---|---|
-| 훅 스크립트 | `~/.claude/hooks/claude-rails/*.sh` (6개, 실행권한 있음) |
-| 전역 설정 | `~/.claude/settings.json` (`hooks` 키만 병합됨, 기존 설정 보존) |
-| 전역 지침 | `~/.claude/CLAUDE.md` (`<!-- CLAUDE-RAILS:BEGIN -->` 블록) |
-| 설치 전 백업 | `~/.claude/settings.json.bak.<timestamp>` |
-| 원본 소스 | `~/githubs/usage` ([github.com/amosQP/claude-rails](https://github.com/amosQP/claude-rails), private) |
+| 항목         | 경로                                                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 훅 스크립트  | `~/.claude/hooks/claude-rails/*.py` (27개, Python, 실행권한 불필요 — `python3 <path>`로 호출)                                       |
+| 훅 테스트    | `~/.claude/hooks/claude-rails/test_*.py` (훅과 같은 디렉토리에 27개, 1:1 대응 — `.coverage`/`.pytest_cache`도 이 디렉토리에서 생김) |
+| 전역 설정    | `~/.claude/settings.json` (`hooks` 키만 병합됨, 기존 설정 보존)                                                                     |
+| 전역 지침    | `~/.claude/CLAUDE.md` (`<!-- CLAUDE-RAILS:BEGIN -->` 블록)                                                                          |
+| 설치 전 백업 | `~/.claude/settings.json.bak.<timestamp>`                                                                                           |
+| 원본 소스    | 이 저장소 자체 ([github.com/coralstay/claude-rails](https://github.com/coralstay/claude-rails), private)                            |
+
+각 훅 스크립트는 다른 훅 파일을 import하지 않는 **완전 독립형**이다 (bash 시절의
+공용 함수 파일 `_lib.sh`는 더 이상 없음 — 각 스크립트가 필요한 로직을 자체적으로
+갖는다. 부작용: 코드 중복은 있지만, 한 훅의 버그가 다른 훅을 절대 깨뜨리지 않는다).
 
 재설치/업데이트하려면: 저장소에서 `git pull` 후 `./install.sh` 다시 실행 (재실행 안전,
 CLAUDE.md는 마커로 중복 방지).
@@ -45,41 +69,48 @@ CLAUDE.md는 마커로 중복 방지).
 ## 3. 어떻게 동작하는가 — 메커니즘 한눈에
 
 1. Claude Code가 세션마다 `~/.claude/settings.json`의 `hooks` 설정을 읽는다.
-2. 특정 이벤트(파일 편집 전, 커밋 전, 턴 종료 시, push 전, 세션 시작 시)마다 등록된
-   스크립트가 자동 실행된다.
-3. 각 스크립트는 **가장 먼저 "지금 이 디렉토리가 backlog.md 프로젝트인가
-   (`backlog/config.yml` 존재 여부)"부터 확인**하고, 아니면 즉시 통과(`exit 0`)한다 —
-   그래서 이 설정이 전역이어도 관계없는 프로젝트를 방해하지 않는다.
-4. backlog 프로젝트라면 조건을 검사해서, 어기면 **exit code 2**로 그 액션 자체를 막는다
-   (편집 불가, 커밋 불가, 턴 종료 불가, push 불가). exit 2는 Claude Code 훅 사양상
-   모든 차단 가능 이벤트에서 공통으로 통하는 유일한 방식이라 이 하나로 통일했다.
-5. 막히면 Claude는 그 이유(스크립트가 stderr로 낸 한국어 메시지)를 그대로 보고, 조건을
+2. 11가지 이벤트(`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`,
+   `PostToolUseFailure`, `Stop`, `SessionEnd`, `ConfigChange`, `PreCompact`,
+   `PermissionRequest`, `InstructionsLoaded`) 각각에 등록된 스크립트가 `matcher`(도구
+   이름)와 `if`(명령 패턴) 조건에 맞을 때 자동 실행된다. 하나의 이벤트/매처에 여러
+   훅이 걸려 있으면 등록 순서대로 전부 실행된다.
+3. 27개 중 **backlog.md 워크플로 전용 5개**만 가장 먼저 "지금 이 디렉토리가 backlog.md
+   프로젝트인가(`backlog/config.yml` 존재 여부)"부터 확인하고, 아니면 즉시 통과한다.
+   나머지 **22개는 이 확인 없이 항상 동작**한다 — 시크릿 보호나 위험 명령 차단이 backlog
+   프로젝트가 아니라고 꺼지면 안 되기 때문이다.
+4. 차단이 필요한 훅은 **exit code 2**로 그 액션 자체를 막는다(편집 불가, 커밋 불가, 턴
+   종료 불가, push 불가, 위험 명령 실행 불가 등). exit 2는 Claude Code 훅 사양상 대부분의
+   차단 가능 이벤트에서 공통으로 통하는 방식이다. 단 `SessionStart`/`InstructionsLoaded`처럼
+   애초에 차단을 지원하지 않는 이벤트도 있는데, 그런 훅은 정보 주입이나(`additionalContext`/
+   `systemMessage`) 다른 이벤트(`UserPromptSubmit`/`PreToolUse`)와 짝을 이뤄 우회 차단하는
+   방식을 쓴다(`instructions_audit.py`가 대표 사례, 8장 참고).
+5. 차단이 아닌 훅도 많다 — 세션 로그 기록, TODO/FIXME 채점, 포매터 실행, 컨텍스트 비용
+   집계처럼 **강제 없이 관측/보조만 하는 훅**이 27개 중 절반 가까이 된다(4장 범례의 ⚙️).
+6. 막히면 Claude는 그 이유(스크립트가 stderr/JSON으로 낸 메시지)를 그대로 보고, 조건을
    충족시킨 뒤 다시 시도한다.
-
-즉 이 저장소가 하는 일은 **"Claude Code 세션 중간중간에 끼어들어서, backlog 프로젝트일
-때만, 정해진 조건이 아니면 액션을 거부하는 차단 스크립트 4개 + 세션 시작 시 브리핑만
-하는 스크립트 1개(+ 둘 다 쓰는 공용 함수 파일 1개)"**다.
 
 ---
 
 ## 4. 표기 범례
 
-이 문서 전체(아래 사용 흐름, Phase 표, HIL 표)에서 공통으로 쓰는 기호. 여기서 한 번만
-정의하고 이후로는 재정의하지 않는다.
+이 문서 전체(아래 사용 흐름, Phase 표, HIL 표, 8장 훅 목록)에서 공통으로 쓰는 기호.
+여기서 한 번만 정의하고 이후로는 재정의하지 않는다.
 
-| 기호 | 의미 |
-|---|---|
-| 🧑 | 필수 HIL — 사람이 반드시 개입해야 진행됨 |
-| 🧑? | 조건부 HIL — 특정 상황에서만 Claude가 사람에게 멈춰서 물어봄 |
-| 🤖 | 훅으로 강제됨 — 어기면 그 액션 자체가 차단됨 |
-| ⚙️ | 자동(강제 없음) — Claude가 스스로 판단/수행, 강제는 없음 |
+| 기호 | 의미                                                                                 |
+| ---- | ------------------------------------------------------------------------------------ |
+| 🧑   | 필수 HIL — 사람이 반드시 개입해야 진행됨                                             |
+| 🧑?  | 조건부 HIL — 특정 상황에서만 Claude가 사람에게 멈춰서 물어봄                         |
+| 🤖   | 훅으로 강제됨 — 어기면 그 액션 자체가 차단됨                                         |
+| ⚙️   | 자동(강제 없음) — Claude가 스스로 판단/수행하거나, 훅이 관측/보조만 하고 막지는 않음 |
 
 ---
 
-## 5. 사용 흐름 — 태스크 하나 따라가기
+## 5. 사용 흐름 — 태스크 하나 따라가기 (backlog.md 워크플로)
 
 까먹고 다시 왔을 때 이 섹션만 봐도 바로 쓸 수 있게, 실제로 손으로 치는 순서를 그대로
-적는다.
+적는다. 이 흐름은 27개 훅 중 **backlog.md 워크플로 전용 5개**(2·3장 참고)가 관여하는
+부분이다 — 시크릿 보호, 위험 명령 차단 같은 나머지 22개는 이 흐름과 별개로 항상
+백그라운드에서 같이 동작한다.
 
 ```
 🧑  "이 프로젝트에 로그인 기능 추가해줘" 라고 프롬프트
@@ -94,7 +125,7 @@ CLAUDE.md는 마커로 중복 방지).
     아래 push 직전에 나옴)
 
 ⚙️  Claude가 backlog task view TASK-12 --plain 으로 태스크 정독
-🤖  이걸 안 하면 다음 Edit/Write가 훅에 막힘
+🤖  이걸 안 하면 다음 Edit/Write가 훅(require_active_task.py)에 막힘
 
 ⚙️  Claude가 backlog task edit TASK-12 -s "In Progress" -a @me
 ⚙️  Claude가 git checkout -b task/TASK-12
@@ -102,10 +133,12 @@ CLAUDE.md는 마커로 중복 방지).
 🤖  이제부터 Edit/Write 가능 (In Progress 태스크 있음 + task view 읽음)
 
 ⚙️  Claude가 작은 단위로 구현 → 테스트 → git commit
-🤖  커밋 시점에 브랜치명(task/TASK-12)과 (설정했다면) 테스트 통과 여부를 훅이 확인
-🤖  커밋 안 하고 턴을 끝내려 하면 훅이 막아서 계속 진행됨
+🤖  커밋 시점에 브랜치명(task/TASK-12)과 (설정했다면) 테스트 통과 여부를
+    훅(pre_commit_check.py)이 확인
+🤖  커밋 안 하고 턴을 끝내려 하면 훅(block_stop_if_dirty.py)이 막아서 계속 진행됨
 
-    (위 사이클을 AC 단위로 반복)
+    (위 사이클을 AC 단위로 반복 — 이 사이에도 포매터/시크릿 보호/위험 명령 차단 등
+    범용 훅 22개는 매 Edit/Write/Bash마다 계속 같이 돈다)
 
 🧑? 작업 중 AC 밖의 일을 발견하면 Claude가 반드시 먼저 물어봄
     (스코프를 넓힐지, 별도 태스크로 뺄지 — 조용히 확장 안 함)
@@ -117,7 +150,9 @@ CLAUDE.md는 마커로 중복 방지).
     사람이 안 보면 아무도 안 본 채로 push된다)
 
 ⚙️  Claude가 git push
-🤖  push 시점에 태스크가 Done 상태이고 final summary가 있는지 훅이 확인
+🤖  push 시점에 태스크가 Done 상태이고 final summary가 있는지 훅(pre_push_check.py)이
+    확인 (프로젝트에 coverageCommand가 설정돼 있으면 pre_push_coverage_check.py가
+    커버리지도 같이 확인)
 ```
 
 이 흐름에서 **사람이 반드시 해야 하는 일은 두 가지**다 — 백로그를 만들었을 때 보고
@@ -128,231 +163,342 @@ CLAUDE.md는 마커로 중복 방지).
 
 ## 6. 전체 프로세스 명세 (Phase -1 ~ 5)
 
-기호는 4장 표기 범례와 동일.
+기호는 4장 표기 범례와 동일. backlog.md 워크플로 전용 훅 5개가 어느 Phase에서
+관여하는지 표시한다.
 
 ### Phase -1. 셋업 🧑 (프로젝트당 최초 1회)
 
-| # | 액션 | 커맨드 |
-|---|---|---|
-| -1.1 | 초기화 | `backlog init` |
-| -1.2 | 상태/우선순위/타입/기본담당자 정의 | `backlog config set` |
-| -1.3 | CLAUDE.md에 backlog 사용규칙 주입 | `backlog agents --update-instructions` |
-| -1.4 | decision→`--ref`, doc→`--doc` 연결 규칙 명시 | (이 저장소의 CLAUDE.md 스니펫) |
+| #    | 액션                                         | 커맨드                                 |
+| ---- | -------------------------------------------- | -------------------------------------- |
+| -1.1 | 초기화                                       | `backlog init`                         |
+| -1.2 | 상태/우선순위/타입/기본담당자 정의           | `backlog config set`                   |
+| -1.3 | CLAUDE.md에 backlog 사용규칙 주입            | `backlog agents --update-instructions` |
+| -1.4 | decision→`--ref`, doc→`--doc` 연결 규칙 명시 | (이 저장소의 CLAUDE.md 스니펫)         |
 
 ### Phase 0. 브리핑 & 현황 파악 🧑 트리거 → ⚙️ 자동
 
-| # | 액션 | 커맨드 |
-|---|---|---|
-| 0.1 | 프로젝트 통계 | `backlog overview` |
-| 0.2 | 칸반 스캔 | `backlog board view` |
-| 0.3 | 통합 검색(중복 방지) | `backlog search "<키워드>" --plain` |
-| 0.4 | 진행중 작업 확인 | `backlog task list --status "<active>" --plain` |
-| 0.5 | 기존 결정 확인 | `backlog decision list` |
+| #   | 액션                 | 커맨드                                          |
+| --- | -------------------- | ----------------------------------------------- |
+| 0.1 | 프로젝트 통계        | `backlog overview`                              |
+| 0.2 | 칸반 스캔            | `backlog board view`                            |
+| 0.3 | 통합 검색(중복 방지) | `backlog search "<키워드>" --plain`             |
+| 0.4 | 진행중 작업 확인     | `backlog task list --status "<active>" --plain` |
+| 0.5 | 기존 결정 확인       | `backlog decision list`                         |
 
 ### Phase 0.5. 드래프트 ⚙️ (선택적)
 
-| # | 액션 | 커맨드 |
-|---|---|---|
+| #     | 액션           | 커맨드                   |
+| ----- | -------------- | ------------------------ |
 | 0.5.1 | 초안 생성/조회 | `draft create/list/view` |
-| 0.5.2 | 확정 → 승격 | `draft promote <id>` |
-| 0.5.3 | 폐기 | `draft archive <id>` |
+| 0.5.2 | 확정 → 승격    | `draft promote <id>`     |
+| 0.5.3 | 폐기           | `draft archive <id>`     |
 
 ### Phase 1. 백로깅 (Epic/Story/Task 생성) ⚙️ + 🤖
 
-이 Phase를 지나는 순간부터 🤖 `require-active-task.sh` 훅이 걸리기 시작한다 — In
+이 Phase를 지나는 순간부터 🤖 `require_active_task.py` 훅이 걸리기 시작한다 — In
 Progress 태스크 없이는 이후 어떤 Edit/Write도 불가.
 
-| # | 액션 | 커맨드 |
-|---|---|---|
-| 1.1 | 중복 확인 | `search`, `task list --search` |
-| 1.2 | Epic 생성 | `milestone add <name>` |
-| 1.3 | 구조 결정 (단일/부모-자식/독립+의존성) | — |
-| 1.4 | 태스크 생성 | `task create --ac --dod --priority --type --milestone --parent --labels` |
-| 1.5 | 관련 decision 연결 | `--ref decision-N` → frontmatter `references:` |
-| 1.6 | 관련 doc/외부링크 연결 | `--doc <path\|url>` → frontmatter `documentation:` |
-| 1.7 | 결과 보고 | 태스크 ID/제목/AC 리스트업 |
+| #   | 액션                                   | 커맨드                                                                   |
+| --- | -------------------------------------- | ------------------------------------------------------------------------ |
+| 1.1 | 중복 확인                              | `search`, `task list --search`                                           |
+| 1.2 | Epic 생성                              | `milestone add <name>`                                                   |
+| 1.3 | 구조 결정 (단일/부모-자식/독립+의존성) | —                                                                        |
+| 1.4 | 태스크 생성                            | `task create --ac --dod --priority --type --milestone --parent --labels` |
+| 1.5 | 관련 decision 연결                     | `--ref decision-N` → frontmatter `references:`                           |
+| 1.6 | 관련 doc/외부링크 연결                 | `--doc <path\|url>` → frontmatter `documentation:`                       |
+| 1.7 | 결과 보고                              | 태스크 ID/제목/AC 리스트업                                               |
 
 ### Phase 2. 검토 게이트 🧑 ★★★ — 필수 HIL
 
 전체 프로세스에서 **훅으로 대체 불가능한 지점** 중 하나(다른 하나는 Phase 4.3 push 전
 코드 리뷰). 사람이 실제로 백로그를 보고 승인해야만 Phase 3가 시작된다.
 
-| # | 액션 | 커맨드 |
-|---|---|---|
+| #   | 액션           | 커맨드                                    |
+| --- | -------------- | ----------------------------------------- |
 | 2.1 | 전체 조망 제시 | `board view` / `board export` / `browser` |
-| 2.2 | 승인 | → Phase 3 진행 |
-| 2.3 | 수정 요청 | `task edit` |
-| 2.4 | 반려 | `task demote <id>` (Draft로 되돌림) |
+| 2.2 | 승인           | → Phase 3 진행                            |
+| 2.3 | 수정 요청      | `task edit`                               |
+| 2.4 | 반려           | `task demote <id>` (Draft로 되돌림)       |
 
 ### Phase 3. 실행 루프 (태스크 단위, 반복)
 
-| 서브단계 | 액션 | HIL/강제 |
-|---|---|---|
-| 3-0 컨텍스트 로딩 | `task view <ID> --plain` 먼저 읽기 (미승격 draft는 `draft list`로 수동 확인) | 🤖 안 읽으면 Edit/Write 차단 |
-| 3-1 활성화 | `task edit -s "In Progress"` + `task/<ID>` 브랜치 전환 | 🤖 커밋 시 브랜치명 검사 |
-| 3-2 리서치 → 계획 | 코드베이스 재조사 후 `task edit --plan` (생성 시점 접근법을 그대로 믿지 않음) | ⚙️ 판단 영역, 강제 없음 |
-| 3-3 승인 게이트 | 중대한 설계/아키텍처 결정 포함 시 구현 전 승인 대기 | 🧑? Claude Code Plan Mode 재사용 |
-| 3-4 구현 서브루프 | 슬라이스 구현→테스트→`--append-notes`→원자적 커밋→반복 | 🤖 `.claude-rails.json`에 testCommand 설정 시 테스트 실패면 커밋 차단 |
-| 3-4b 미커밋 종료 방지 | — | 🤖 dirty tree + In Progress면 턴 종료 차단 |
-| 3-5 스코프 이탈 감지 | AC 밖 발견 시 조용히 확장 않고 질문 | 🧑? 발견 시에만, 자동 검증은 미구현 |
-| 3-6 서브태스크 처리 | 서브태스크 1개만 할당 시 다음으로 자동 진행 금지 | 🧑? 1개만 할당된 경우에만 |
-| 3-7 완료 전환 | 증거(테스트 통과 로그 등) 확보 후에만 AC 체크 | ⚙️ 판단 영역, 자동 검증 미구현 |
+| 서브단계              | 액션                                                                          | HIL/강제                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 3-0 컨텍스트 로딩     | `task view <ID> --plain` 먼저 읽기 (미승격 draft는 `draft list`로 수동 확인)  | 🤖 `require_active_task.py` — 안 읽으면 Edit/Write 차단                                         |
+| 3-1 활성화            | `task edit -s "In Progress"` + `task/<ID>` 브랜치 전환                        | 🤖 `pre_commit_check.py` — 커밋 시 브랜치명 검사                                                |
+| 3-2 리서치 → 계획     | 코드베이스 재조사 후 `task edit --plan` (생성 시점 접근법을 그대로 믿지 않음) | ⚙️ 판단 영역, 강제 없음                                                                         |
+| 3-3 승인 게이트       | 중대한 설계/아키텍처 결정 포함 시 구현 전 승인 대기                           | 🧑? Claude Code Plan Mode 재사용                                                                |
+| 3-4 구현 서브루프     | 슬라이스 구현→테스트→`--append-notes`→원자적 커밋→반복                        | 🤖 `pre_commit_check.py` — `.claude-rails.json`에 `testCommand` 설정 시 테스트 실패면 커밋 차단 |
+| 3-4b 미커밋 종료 방지 | —                                                                             | 🤖 `block_stop_if_dirty.py` — dirty tree + In Progress면 턴 종료 차단                           |
+| 3-5 스코프 이탈 감지  | AC 밖 발견 시 조용히 확장 않고 질문                                           | 🧑? 발견 시에만, 자동 검증은 미구현                                                             |
+| 3-6 서브태스크 처리   | 서브태스크 1개만 할당 시 다음으로 자동 진행 금지                              | 🧑? 1개만 할당된 경우에만                                                                       |
+| 3-7 완료 전환         | 증거(테스트 통과 로그 등) 확보 후에만 AC 체크                                 | ⚙️ 판단 영역, 자동 검증 미구현                                                                  |
 
 ### Phase 4. 완료 & 종결 🧑 + 🤖
 
-| # | 액션 | 커맨드/강제 |
-|---|---|---|
-| 4.1 | AC/DoD 체크, final-summary 작성 | `task edit --check-ac/--check-dod/--final-summary` |
-| 4.2 | 상태 전환 | `task edit -s Done` |
-| 4.3 | **코드 리뷰** | 🧑 사람이 diff/커밋 로그를 실제로 검토 — push 전 필수 HIL |
-| 4.4 | push 전 상태 확인 | 🤖 `task/<ID>` 브랜치 push 시 status=Done && final summary 존재 확인 |
-| 4.5 | Push (기능/Story 단위) | `git push` |
-| 4.6 | 태스크 아카이브 | `task complete TASK-ID` |
-| 4.7 | Epic 완료 시 | `milestone archive` |
-| 4.8 | (대안) 취소 경로 | `task archive` / `milestone remove/rename` |
+| #   | 액션                            | 커맨드/강제                                                                                                                                                                     |
+| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.1 | AC/DoD 체크, final-summary 작성 | `task edit --check-ac/--check-dod/--final-summary`                                                                                                                              |
+| 4.2 | 상태 전환                       | `task edit -s Done`                                                                                                                                                             |
+| 4.3 | **코드 리뷰**                   | 🧑 사람이 diff/커밋 로그를 실제로 검토 — push 전 필수 HIL                                                                                                                       |
+| 4.4 | push 전 상태 확인               | 🤖 `pre_push_check.py` — `task/<ID>` 브랜치 push 시 status=Done && final summary 존재 확인. 프로젝트에 `coverageCommand` 설정 시 `pre_push_coverage_check.py`가 커버리지도 확인 |
+| 4.5 | Push (기능/Story 단위)          | `git push`                                                                                                                                                                      |
+| 4.6 | 태스크 아카이브                 | `task complete TASK-ID`                                                                                                                                                         |
+| 4.7 | Epic 완료 시                    | `milestone archive`                                                                                                                                                             |
+| 4.8 | (대안) 취소 경로                | `task archive` / `milestone remove/rename`                                                                                                                                      |
 
 ### Phase 5. 주기적 유지보수 ⚙️
 
 훅은 세션 이벤트 기반이라 "며칠마다" 같은 진짜 주기 실행은 대상이 아니다 — `/loop`나
-시스템 cron으로 별도 구성해야 한다.
+시스템 cron으로 별도 구성해야 한다. (`standup_autopilot.py`가 세션 단위로 일일 스탠드업
+초안을 쌓아주긴 하지만, 이것도 세션이 열려야 실행되는 것이지 진짜 크론은 아니다.)
 
-| # | 액션 | 커맨드 |
-|---|---|---|
-| 5.1 | 무결성 점검 | `doctor --fix --yes` |
-| 5.2 | 완료 태스크 정리 | `cleanup` |
-| 5.3 | 정기 리포팅 | `overview` |
+| #   | 액션             | 커맨드               |
+| --- | ---------------- | -------------------- |
+| 5.1 | 무결성 점검      | `doctor --fix --yes` |
+| 5.2 | 완료 태스크 정리 | `cleanup`            |
+| 5.3 | 정기 리포팅      | `overview`           |
 
 ---
 
 ## 7. HIL 지점 총정리
 
-| 위치 | 필수/조건부 | 트리거 조건 | 훅으로 대체 가능? |
-|---|---|---|---|
-| Phase -1 셋업 | 필수 | 항상 (최초 1회) | 대체 불가 — 사람의 결정 |
-| Phase 0 브리핑 | 필수 | 항상 (요청 자체가 사람에게서 시작) | 대체 불가 |
-| **Phase 2 검토 게이트** | **필수** | **항상, 예외 없음** | **대체 불가 — 백로그 내용은 사람 판단** |
-| 3-3 승인 게이트 | 조건부 | 중대 설계/아키텍처 결정 포함 시 | Plan Mode로 흡수(이미 존재) |
-| 3-5 스코프 이탈 | 조건부 | AC 밖 작업 발견 시 | 부분 대체 가능(LLM 판단형 훅, 미구현) |
-| 3-6 서브태스크 | 조건부 | 서브태스크 1개만 할당 시 | 대체 어려움(판단 영역) |
-| **Phase 4.3 push 전 코드 리뷰** | **필수** | **매 push 전, 예외 없음** | **대체 불가 — 코드 내용은 사람 판단.** 현재 이 리뷰 자체를 확인하는 훅은 없음 — `pre-push-check.sh`는 상태(Done)와 final summary 존재만 확인하고, "사람이 실제로 봤는지"는 검증하지 못함 |
+| 위치                            | 필수/조건부 | 트리거 조건                        | 훅으로 대체 가능?                                                                                                                                                                        |
+| ------------------------------- | ----------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase -1 셋업                   | 필수        | 항상 (최초 1회)                    | 대체 불가 — 사람의 결정                                                                                                                                                                  |
+| Phase 0 브리핑                  | 필수        | 항상 (요청 자체가 사람에게서 시작) | 대체 불가                                                                                                                                                                                |
+| **Phase 2 검토 게이트**         | **필수**    | **항상, 예외 없음**                | **대체 불가 — 백로그 내용은 사람 판단**                                                                                                                                                  |
+| 3-3 승인 게이트                 | 조건부      | 중대 설계/아키텍처 결정 포함 시    | Plan Mode로 흡수(이미 존재)                                                                                                                                                              |
+| 3-5 스코프 이탈                 | 조건부      | AC 밖 작업 발견 시                 | 부분 대체 가능(LLM 판단형 훅, 미구현 — `dead_end_registry.py`는 "되돌린 접근 재시도"만 다루며 스코프 이탈과는 별개)                                                                      |
+| 3-6 서브태스크                  | 조건부      | 서브태스크 1개만 할당 시           | 대체 어려움(판단 영역)                                                                                                                                                                   |
+| **Phase 4.3 push 전 코드 리뷰** | **필수**    | **매 push 전, 예외 없음**          | **대체 불가 — 코드 내용은 사람 판단.** 현재 이 리뷰 자체를 확인하는 훅은 없음 — `pre_push_check.py`는 상태(Done)와 final summary 존재만 확인하고, "사람이 실제로 봤는지"는 검증하지 못함 |
 
 Phase 2와 Phase 4.3, 두 곳 모두 **항상, 예외 없이** 발생하는 필수 HIL이다 — 나머지(3-3/3-5/3-6)는
 특정 조건에서만 발생하는 조건부 HIL이라는 점에서 구분된다.
 
 ---
 
-## 8. 훅 상세 스펙 (스크립트별 정확한 로직)
+## 8. 훅 상세 스펙 — 27개, 이벤트별 정리
 
-### 공통 — `_lib.sh`
+각 훅은 완전 독립형(다른 훅 파일을 import하지 않음)이다. 설명은 각 스크립트 최상단의
+모듈 docstring을 그대로 옮긴 것 — 실제로 읽지 않은 동작은 적지 않는다. "출처" 열은
+포팅 원본이 있는 경우만 표시(대부분
+[karanb192/claude-code-hooks](https://github.com/karanb192/claude-code-hooks) 또는
+[disler/claude-code-hooks-mastery](https://github.com/disler/claude-code-hooks-mastery), 둘 다
+MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없으면 즉시 통과), 나머지는
+항상 동작.
 
-```
-deny(reason):  stderr에 reason 출력 후 exit 2
-is_backlog_project(dir):  dir/backlog/config.yml 존재 여부
-no_active_task(dir):  `backlog task list --status "In Progress" --plain` 결과에
-                       "No tasks found." 포함 여부
-```
+### SessionStart
 
-### `session-start.sh` — 이벤트 `SessionStart`
-```
-1. backlog CLI 없음 또는 backlog 프로젝트 아님 → exit 0
-2. `backlog instructions overview` → additionalContext로 주입
-3. `backlog doctor` → systemMessage로 주입
-```
-차단 불가 이벤트(SessionStart는 차단 미지원) — 정보 브리핑 전용.
+| 훅                     | 🔒  | 설명                                                                                                                                                                     |
+| ---------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `session_start.py`     | 🔒  | backlog.md 프로젝트면 공식 워크플로 가이드와 무결성 이슈를 컨텍스트로 주입. SessionStart는 차단을 지원하지 않으므로 정보 주입 전용. bash 시절 `session-start.sh`의 후신  |
+| `session_logger.py`    |     | 세션 전체(cwd, git 브랜치, 프롬프트, 파일 변경, bash 명령 — 시크릿은 best-effort로 마스킹)를 JSONL로 기록. `CC_SESSION_LOG_DIR`로 로그 위치 변경 가능(Obsidian vault 등) |
+| `dead_rules_audit.py`  |     | CLAUDE.md 규칙 준수 스코어카드: Claude가 실제로 지킨/어긴 규칙을 집계해, 만성적으로 무시되는 규칙을 훅으로 승격할 후보로 표시                                            |
+| `standup_autopilot.py` |     | 전날 `session_logger.py` 로그에서 미해결 항목을 다음 세션 시작 시 다시 주입                                                                                              |
+| `bounty_board.py`      |     | 세션 시작 시 저장소의 TODO/FIXME/HACK 부채 현황을 보여줌(아래 PostToolUse 항목과 동일 스크립트)                                                                          |
 
-### `require-active-task.sh` — `PreToolUse`, matcher `Edit|Write`
-```
-1. backlog 프로젝트 아님 → exit 0
-2. In Progress 태스크 없음 → deny
-3. transcript_path 안에 "task view" 문자열 없음 → deny
-4. 통과 → exit 0
-```
-한계: 상태명 `"In Progress"` 하드코딩, 3번은 문자열 검색 기반 휴리스틱(어떤 태스크를
-읽었는지까지는 검증 안 함).
+### UserPromptSubmit
 
-### `pre-commit-check.sh` — `PreToolUse`, matcher `Bash`, `if: "Bash(git commit *)"`
-```
-1. backlog CLI 없음 또는 backlog 프로젝트 아님 → exit 0
-2. In Progress 태스크 있음 && 브랜치명이 "task/"로 시작 안 함 → deny
-3. .claude-rails.json 있고 testCommand 설정됨 && 그 커맨드 exit≠0 → deny
-4. 통과 → exit 0
-```
-`testCommand`는 `eval`로 실행됨 — 신뢰할 수 있는 값만 넣을 것.
+| 훅                      | 🔒  | 설명                                                                                                                                                                                                                                                                              |
+| ----------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `instructions_audit.py` |     | CLAUDE.md/`.claude/rules/*.md`에서 숨겨진/적대적 지시(제로폭 유니코드, bidi override, 시크릿 유출 지시, curl\|sh 등)를 감지했을 때 세션을 잠그는 락 파일이 있으면 모든 프롬프트를 차단. `HOOK_AUDIT_LEVEL`(critical\|high\|strict, 기본 high), `HOOK_AUDIT_WARN_ONLY=true`로 조정 |
+| `session_logger.py`     |     | 프롬프트를 세션 로그에 기록(이벤트 타입만 다름, 로그 파일은 SessionStart와 동일)                                                                                                                                                                                                  |
+| `dead_end_registry.py`  |     | "그거 안 됐어, 이유는 X" 같은 되돌림 패턴을 프롬프트에서 감지해 현재 세션에서 최근 편집한 파일에 등록                                                                                                                                                                             |
 
-### `block-stop-if-dirty.sh` — `Stop`
-```
-1. backlog CLI 없음 또는 backlog 프로젝트 아님 또는 In Progress 태스크 없음 → exit 0
-2. git status --porcelain 결과 있음(커밋 안 된 변경) → deny (턴 종료 차단)
-3. 통과 → exit 0
-```
+### PreToolUse
 
-### `pre-push-check.sh` — `PreToolUse`, matcher `Bash`, `if: "Bash(git push *)"`
-```
-1. backlog CLI 없음 또는 backlog 프로젝트 아님 → exit 0
-2. 브랜치명이 "task/"로 시작 안 함 → exit 0 (이 훅은 task 브랜치만 검사)
-3. task_id = 브랜치명에서 "task/" 뗀 나머지
-4. `backlog task view <task_id> --json` 조회 실패 → exit 0
-5. status ≠ "Done" → deny
-6. finalSummary 비어있음 → deny
-7. 통과 → exit 0
-```
-필드명(`status`, `finalSummary`)은 실제 프로젝트에서 `task view --json` 출력을 직접
-확인해 검증된 값.
+#### matcher: `Edit|Write`
 
-모든 스크립트는 **backlog 프로젝트가 아닌 곳에서는 즉시 통과**하며, 차단은 예외 없이
-**exit code 2**로 통일(이벤트별로 다른 JSON 필드를 요구하지 않는 가장 견고한 방식).
+| 훅                       | 🔒  | 설명                                                                                                                                          |
+| ------------------------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `require_active_task.py` | 🔒  | In Progress 태스크가 있고 이번 세션에 `backlog task view`로 그 내용을 읽은 적이 있어야만 편집 허용. bash 시절 `require-active-task.sh`의 후신 |
+| `dead_end_registry.py`   |     | 등록된 죽은 접근을 다시 건드리려 하면 경고(차단 아님 — PreToolUse는 차단 이벤트에서 `additionalContext`를 지원하지 않으므로 stderr로만 표시)  |
+
+#### matcher: `Bash`
+
+| 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                        |
+| ----------------------------- | --------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                  |
+| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                               |
+| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록 |
+| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                 |
+| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                         |
+| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                            |
+| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                              |
+| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                      |
+
+#### matcher: `Read|Edit|Write|Bash`
+
+| 훅                   | 설명                                                                                                                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protect_secrets.py` | `.env`, SSH 키, 클라우드 자격증명, 키스토어 등 시크릿 파일의 읽기/수정/유출(Bash로 `cat`/`grep`/`cp` 하는 우회 포함)을 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict, 기본 high) |
+
+#### matcher: `Bash|Edit|Write`
+
+| 훅                 | 설명                                                                                                                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protect_tests.py` | 테스트 파일 삭제, 테스트처럼 안 보이게 리네임, skip/xfail로 테스트 비활성화 등 "가짜 그린"을 차단                                                                                                                                                 |
+| `config_guard.py`  | 에이전트 자신의 가드레일 설정(`~/.claude/settings.json`, `~/.claude/hooks/`, `.claude/settings*.json`, `.mcp.json`, 플러그인 매니페스트) 변조 차단 — 존재하지 않던 파일을 새로 만드는 것도 변조로 취급. `CONFIG_GUARD_ALLOW=true`로 1회 우회 가능 |
+
+#### matcher 없음 (모든 도구)
+
+| 훅                      | 설명                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `instructions_audit.py` | 잠금 파일이 있으면 어떤 도구 호출도 차단(위 UserPromptSubmit 항목과 동일 스크립트, 같은 락 메커니즘) |
+
+### PostToolUse
+
+#### matcher 없음 (모든 도구)
+
+| 훅                  | 설명                                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session_logger.py` | 도구 호출 결과를 세션 로그에 기록                                                                                                                                                                                                                 |
+| `nerf_receipts.py`  | 실패율, 편집 처리량, 모델 버전별 토큰/작업량을 기록하고 모델이 바뀌었을 때 실질적 변화를 표시. transcript의 `message.model`/`message.usage.iterations[]`를 그대로 사용(자기 보고 아님). `~/.claude/hooks-logs/nerf-receipts.jsonl`에 JSONL로 적재 |
+
+#### matcher: `Edit|Write`
+
+| 훅                    | 설명                                                                                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto_stage.py`       | Claude가 수정한 파일을 자동으로 `git add`해서 `git status`가 항상 Claude가 건드린 것과 일치하게 함. git 저장소 밖/파일 밖에서는 조용히 무시                                             |
+| `format_code.py`      | 편집한 파일을 포매팅(ruff format/prettier --write) 후 린트/타입체크(ruff check/tsc --noEmit) 실행, 결과를 `systemMessage`로 피드백만 함(차단 없음). 해당 툴이 PATH에 없으면 조용히 무시 |
+| `dead_rules_audit.py` | 편집이 있을 때마다 규칙 준수 집계를 갱신(SessionStart 항목과 동일 스크립트)                                                                                                             |
+| `bounty_board.py`     | TODO/FIXME/HACK 마커에 "발견 후 경과일수 기반" XP를 매기고, 마커가 포함된 줄을 지우면 지급. 기본 10 + 일당 2(최대 100)                                                                  |
+
+#### matcher: `Read|Grep|Glob|Bash`
+
+| 훅                | 설명                                                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `context_hogs.py` | 도구 결과의 문자 수(÷4 근사치)를 로드한 파일에 귀속시켜, 세션에서 컨텍스트를 가장 많이 먹은 파일 리더보드를 만듦 |
+
+### PostToolUseFailure
+
+| 훅                 | 설명                                                                   |
+| ------------------ | ---------------------------------------------------------------------- |
+| `nerf_receipts.py` | 도구 호출 실패도 같은 로그에 기록(위 PostToolUse 항목과 동일 스크립트) |
+
+### Stop
+
+| 훅                       | 🔒  | 설명                                                                                                                                          |
+| ------------------------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block_stop_if_dirty.py` | 🔒  | In Progress 태스크가 있는데 커밋 안 된 변경이 있으면 턴 종료를 차단해 작은 커밋 루프를 끝까지 강제. bash 시절 `block-stop-if-dirty.sh`의 후신 |
+| `nerf_receipts.py`       |     | Stop 이벤트도 같은 로그에 기록                                                                                                                |
+| `standup_autopilot.py`   |     | 이번 턴의 파일/명령 활동을 오늘자 스탠드업 파일(`~/.claude/hooks-logs/standup/<YYYY-MM-DD>.md`)에 추가                                        |
+
+### SessionEnd
+
+| 훅                     | 설명                                 |
+| ---------------------- | ------------------------------------ |
+| `session_logger.py`    | 세션 종료를 로그에 기록              |
+| `dead_rules_audit.py`  | 세션 종료 시점 규칙 준수 집계 마무리 |
+| `standup_autopilot.py` | 스탠드업 파일 마무리                 |
+
+### ConfigChange (matcher: `user_settings\|project_settings\|local_settings\|policy_settings\|skills`)
+
+| 훅                | 설명                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config_watch.py` | 세션 도중의 모든 설정 변경을 눈에 띄게 알림(기본) 또는 `CONFIG_WATCH_BLOCK=true`로 아예 차단. `config_guard.py`가 에이전트 자신의 편집을 막는 것과 달리, 이건 그 외 경로(악성 postinstall 스크립트의 `settings.json` 재작성 등)로 일어나는 아웃오브밴드 변경을 잡음. `policy_settings` 변경은 절대 차단하지 않고 경고만 함(관리형/엔터프라이즈 설정이라 이 세션이 오버라이드할 대상이 아니므로) |
+
+### PreCompact
+
+| 훅                      | 설명                                                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `pre_compact_backup.py` | 컨텍스트 압축으로 버려지기 직전에 전체 transcript를 `~/.claude/hooks-logs/transcript_backups/<session_id>-<timestamp>.jsonl`로 백업 |
+
+### PermissionRequest
+
+| 훅                         | 설명                                                                                                                                                                                                                                               |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `permission_auto_allow.py` | 실질적 위험이 없는 권한 요청만 자동 승인(Read/Glob/Grep은 항상, Bash는 셸 메타문자 없는 고정된 읽기전용 명령 목록에 한해). "allow"만 추가하며 "deny"는 절대 내리지 않음 — Edit/Write/그 외 Bash/MCP는 건드리지 않고 그대로 일반 권한 흐름으로 넘김 |
+
+### InstructionsLoaded (matcher: 모두)
+
+| 훅                      | 설명                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `instructions_audit.py` | CLAUDE.md/`.claude/rules/*.md`가 로드될 때 내용을 스캔해 적대적 지시가 있으면 락 파일을 씀. 이 이벤트 자체는 차단을 지원하지 않으므로(exit code/`continue: false` 모두 현재 빌드에서 무시됨), 실제 차단은 락 파일을 확인하는 `UserPromptSubmit`/`PreToolUse` 쪽에서 일어남(위 항목들과 동일 스크립트, 3중 등록) |
 
 ---
 
 ## 9. 프로젝트별 설정 — `.claude-rails.json`
 
-프로젝트 루트에 두면 `pre-commit-check.sh`가 커밋 전 테스트를 강제한다:
+프로젝트 루트에 두면 두 가지를 켤 수 있다:
 
 ```json
-{ "testCommand": "npm test" }
+{
+  "testCommand": "npm test",
+  "coverageCommand": "python3 -m pytest --cov=. --cov-fail-under=100"
+}
 ```
 
-없으면 테스트 검사는 건너뛰고 브랜치명 검사만 수행한다. 예시는
-`.claude-rails.json.example` 참고.
+- `testCommand` — `pre_commit_check.py`가 커밋 전에 실행해서 실패하면 커밋을 막는다.
+- `coverageCommand` — `pre_push_coverage_check.py`가 push 전에 실행해서 그 커맨드 자체가
+  실패(예: `--cov-fail-under` 미달)하면 push를 막는다. 항상 실제 실행 결과를 보여주며
+  수치를 지어내지 않는다.
+
+둘 다 없으면 해당 검사는 건너뛴다(`pre_commit_check.py`는 브랜치명 검사만 수행).
+`testCommand`/`coverageCommand` 모두 내부적으로 셸에 그대로 넘겨 실행되므로, 신뢰할 수
+있는 값만 넣을 것. 예시는 `.claude-rails.json.example` 참고(현재는 `testCommand`만
+포함 — 필요하면 `coverageCommand`를 직접 추가).
 
 ---
 
 ## 10. 알려진 한계 / 다음 단계
 
-- **상태 이름 고정**: `"In Progress"`를 하드코딩. 프로젝트가 `backlog config`로 상태명을
-  바꾸면 훅이 오작동한다.
-- **`task view` 확인이 휴리스틱**: transcript를 `grep "task view"`로만 확인, 완벽하지 않음.
-- **3-5 스코프 이탈 감지 미구현**: `prompt`/`agent` 타입 훅으로 LLM 판단을 걸 수 있지만
-  아직 추가하지 않음 (오탐/누락 검증 필요).
+- **상태 이름 고정**: backlog.md 워크플로 훅들이 `"In Progress"`를 하드코딩하고 있다.
+  프로젝트가 `backlog config`로 상태명을 바꾸면 오작동할 수 있다.
+- **`task view` 확인이 휴리스틱**: `require_active_task.py`는 transcript에서 "task
+  view" 문자열 검색으로만 확인한다 — 완벽하지 않다.
+- **3-5 스코프 이탈 감지 미구현**: `dead_end_registry.py`는 "이전에 되돌린 접근을
+  재시도하는지"만 다루며, "AC 밖 작업으로 스코프가 넓어졌는지"는 별개 문제로 아직
+  훅화되지 않았다. `prompt`/`agent` 타입 훅으로 LLM 판단을 걸 수는 있지만 오탐/누락
+  검증이 필요해 보류 중.
 - **3-7 AC 체크 전 증거 확인 미구현**: `PostToolUse`로 테스트 결과를 상태 파일에 남기고
-  `--check-ac` 직전 `PreToolUse`가 그 파일을 확인하는 2단 구조 필요, 미구현.
+  `--check-ac` 직전 `PreToolUse`가 그 파일을 확인하는 2단 구조가 필요하지만 미구현.
 - **Phase 5 주기 실행 없음**: 훅은 세션 이벤트 기반이라 "N일마다" 실행은 `/loop`/cron으로
-  별도 구성해야 함.
+  별도 구성해야 한다. `standup_autopilot.py`도 세션이 열려야 도는 것이지 진짜 크론은
+  아니다.
+- **관측 훅들의 로그가 계속 쌓임**: `session_logger.py`/`nerf_receipts.py`/
+  `pre_compact_backup.py`/`standup_autopilot.py` 등이 `~/.claude/hooks-logs/` 아래에
+  JSONL/마크다운을 계속 적재한다 — 로테이션/정리 메커니즘은 아직 없다.
 
 ---
 
 ## 11. 설치 / 재설치 / 삭제
 
 **설치/재설치**:
+
 ```bash
-cd ~/githubs/usage   # 이 저장소
+cd ~/githubs/claude-rails   # 이 저장소
 ./install.sh
 ```
-전제조건: `backlog` CLI (`npm i -g backlog.md`), `jq`. 재실행 안전 (settings.json은
-매번 백업 후 병합, CLAUDE.md는 마커로 중복 방지).
+
+전제조건: `backlog` CLI (`npm i -g backlog.md`), `jq`, `python3`. 재실행 안전
+(settings.json은 매번 백업 후 병합, CLAUDE.md는 마커로 중복 방지, 훅 스크립트는 그냥
+덮어쓰기).
 
 **삭제**:
+
 - `~/.claude/settings.json`에서 병합된 `hooks` 블록 제거
 - `~/.claude/CLAUDE.md`의 `<!-- CLAUDE-RAILS:BEGIN -->` ~ `END` 블록 제거
-- `~/.claude/hooks/claude-rails/` 삭제
+- `~/.claude/hooks/claude-rails/` 삭제 (`.coverage`/`.pytest_cache`도 이 안에 있으므로
+  같이 지워짐)
 
 **검증**:
+
 ```bash
 jq empty ~/.claude/settings.json && echo OK
 echo '{"cwd":"<backlog 프로젝트 경로>","transcript_path":"/nonexistent"}' \
-  | bash ~/.claude/hooks/claude-rails/require-active-task.sh; echo "exit: $?"
+  | python3 ~/.claude/hooks/claude-rails/require_active_task.py; echo "exit: $?"
 ```
+
 훅 변경 후 반영이 안 되면 `/hooks` 메뉴를 한 번 열거나 세션을 재시작.
+
+각 훅은 `test_<name>.py`로 단위 테스트가 있다 — 훅 로직을 고치면 같은 디렉토리에서
+`python3 -m pytest`로 돌려볼 것:
+
+```bash
+cd ~/.claude/hooks/claude-rails && python3 -m pytest
+```
 
 ---
 
@@ -365,11 +511,16 @@ claude-rails/
 ├── settings.hooks.json       # ~/.claude/settings.json에 병합되는 hooks 블록
 ├── CLAUDE.md.snippet         # ~/.claude/CLAUDE.md에 추가되는 워크플로 안내
 ├── .claude-rails.json.example
-└── hooks/
-    ├── _lib.sh
-    ├── session-start.sh
-    ├── require-active-task.sh
-    ├── pre-commit-check.sh
-    ├── block-stop-if-dirty.sh
-    └── pre-push-check.sh
+└── hooks/                     # 27개 훅 + 27개 test_*.py = 54개 파일, 전부 flat
+    ├── session_start.py / test_session_start.py                    # 🔒 backlog 전용
+    ├── require_active_task.py / test_require_active_task.py        # 🔒 backlog 전용
+    ├── pre_commit_check.py / test_pre_commit_check.py               # 🔒 backlog 전용
+    ├── pre_push_check.py / test_pre_push_check.py                   # 🔒 backlog 전용
+    ├── block_stop_if_dirty.py / test_block_stop_if_dirty.py         # 🔒 backlog 전용
+    └── (나머지 22개 훅 + 대응 test_*.py — 8장 이벤트별 표 참고)
 ```
+
+각 훅과 그 테스트는 같은 디렉토리에 나란히 산다(별도 `tests/` 서브폴더 없음) — 설치
+대상 디렉토리(`~/.claude/hooks/claude-rails/`)에 `.coverage`/`.pytest_cache`가 실제로
+생기는 것도 테스트를 그 자리에서 그대로 돌리기 때문이다. `install.sh`도 이 컨벤션을
+그대로 따라 훅 본체와 테스트를 함께 설치한다.
