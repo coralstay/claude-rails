@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""PreToolUse (matcher: Bash, if: Bash(git *))
+Phase 4.3: only push a task/<ID> branch once that task is Done and carries
+a final summary.
+
+The settings.json `if` filter only narrows to "any git command" - this
+script does its own subcommand detection so `git -C <path> push` (flags
+before the subcommand) is still recognized as a push, not just `git push`.
+
+Fully self-contained: no imports from any other file in this repo."""
+
+import json
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+
+FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+
+
+def has_command(name):
+    return shutil.which(name) is not None
+
+
+def command_invokes_git_subcommand(command, subcommand):
+    """True if `command` runs `git <subcommand>` anywhere, regardless of
+    global flags (like `-C <path>`) placed before the subcommand."""
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return subcommand in command
+
+    i = 0
+    while i < len(tokens):
+        if tokens[i] != "git":
+            i += 1
+            continue
+        j = i + 1
+        while j < len(tokens):
+            tok = tokens[j]
+            if tok in FLAGS_WITH_ARG:
+                j += 2
+                continue
+            if tok.startswith("-"):
+                j += 1
+                continue
+            if tok == subcommand:
+                return True
+            break
+        i = j
+    return False
+
+
+def is_backlog_project(cwd):
+    return os.path.isfile(os.path.join(cwd, "backlog", "config.yml"))
+
+
+def current_branch(cwd):
+    result = subprocess.run(
+        ["git", "-C", cwd, "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def task_view(cwd, task_id):
+    result = subprocess.run(
+        ["backlog", "task", "view", task_id, "--json"], cwd=cwd, capture_output=True, text=True
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+def deny(message):
+    print(message, file=sys.stderr)
+    sys.exit(2)
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except json.JSONDecodeError:
+        data = {}
+
+    cwd = data.get("cwd", "")
+    command = (data.get("tool_input") or {}).get("command", "")
+
+    if not command_invokes_git_subcommand(command, "push"):
+        sys.exit(0)
+    if not has_command("backlog"):
+        sys.exit(0)
+    if not is_backlog_project(cwd):
+        sys.exit(0)
+
+    branch = current_branch(cwd)
+    if not branch.startswith("task/"):
+        sys.exit(0)
+    task_id = branch[len("task/") :]
+
+    view = task_view(cwd, task_id)
+    if view is None:
+        sys.exit(0)
+
+    task = view.get("task", {})
+    status = task.get("status", "")
+    summary = (task.get("finalSummary") or "").strip()
+
+    if status != "Done":
+        deny(f"[claude-rails] {task_id} 가 아직 Done 상태가 아닙니다 (현재: {status}). 완료 처리 후 push하세요.")
+    if not summary:
+        deny(
+            f"[claude-rails] {task_id} 의 final summary가 비어있습니다. "
+            f"'backlog task edit {task_id} --final-summary \"...\"' 로 작성 후 push하세요."
+        )
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,107 @@
+import io
+import json
+
+import pytest
+
+import config_guard as cg
+
+
+def run_main(monkeypatch, tool_name, tool_input):
+    stdin_data = {"tool_name": tool_name, "tool_input": tool_input}
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(stdin_data)))
+    monkeypatch.delenv("CONFIG_GUARD_ALLOW", raising=False)
+    with pytest.raises(SystemExit) as exc_info:
+        cg.main()
+    return exc_info.value.code
+
+
+def test_blocks_edit_settings_json(monkeypatch, capsys):
+    path = str.replace("~/.claude/settings.json", "~", "/Users/x")
+    code = run_main(monkeypatch, "Edit", {"file_path": path})
+    assert code == 2
+    assert "settings.json" in capsys.readouterr().err
+
+
+def test_blocks_write_hook_file(monkeypatch):
+    code = run_main(monkeypatch, "Write", {"file_path": "/Users/x/.claude/hooks/claude-rails/new_hook.py"})
+    assert code == 2
+
+
+def test_blocks_write_creating_new_settings_local(monkeypatch):
+    # Creating a file that doesn't exist yet still counts as mutation.
+    code = run_main(monkeypatch, "Write", {"file_path": "/Users/x/.claude/settings.local.json"})
+    assert code == 2
+
+
+def test_allows_edit_unrelated_file(monkeypatch):
+    assert run_main(monkeypatch, "Edit", {"file_path": "/Users/x/project/main.py"}) == 0
+
+
+def test_blocks_bash_rm_on_hook_file(monkeypatch):
+    code = run_main(monkeypatch, "Bash", {"command": "rm /Users/x/.claude/hooks/claude-rails/guard.py"})
+    assert code == 2
+
+
+def test_blocks_bash_redirect_into_settings(monkeypatch):
+    code = run_main(monkeypatch, "Bash", {"command": "echo bad > /Users/x/.claude/settings.json"})
+    assert code == 2
+
+
+def test_allows_bash_reading_settings(monkeypatch):
+    # A plain read (cat, no mutation pattern) is not blocked.
+    assert run_main(monkeypatch, "Bash", {"command": "cat /Users/x/.claude/settings.json"}) == 0
+
+
+def test_allows_unrelated_bash(monkeypatch):
+    assert run_main(monkeypatch, "Bash", {"command": "ls -la"}) == 0
+
+
+def test_config_guard_allow_env_bypasses_everything(monkeypatch):
+    monkeypatch.setenv("CONFIG_GUARD_ALLOW", "true")
+    monkeypatch.setattr(
+        "sys.stdin",
+        io.StringIO(json.dumps({"tool_name": "Edit", "tool_input": {"file_path": "/Users/x/.claude/settings.json"}})),
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        cg.main()
+    assert exc_info.value.code == 0
+
+
+def test_main_exits_cleanly_on_malformed_stdin(monkeypatch):
+    monkeypatch.delenv("CONFIG_GUARD_ALLOW", raising=False)
+    monkeypatch.setattr("sys.stdin", io.StringIO("not json"))
+    with pytest.raises(SystemExit) as exc_info:
+        cg.main()
+    assert exc_info.value.code == 0
+
+
+def test_is_protected_path_expands_tilde():
+    assert cg.is_protected_path("~/.claude/settings.json") is True
+    assert cg.is_protected_path("~/.claude/hooks/foo.py") is True
+    assert cg.is_protected_path("~/project/main.py") is False
+    assert cg.is_protected_path("") is False
+
+
+def test_bash_targets_protected_config_requires_mutation_pattern():
+    assert cg.bash_targets_protected_config("cat ~/.claude/settings.json") is False
+    assert cg.bash_targets_protected_config("rm ~/.claude/settings.json") is True
+    assert cg.bash_targets_protected_config("") is False
+
+
+def test_cd_into_hooks_dir_with_unrelated_redirect_is_not_a_false_positive(monkeypatch):
+    command = "cd ~/.claude/hooks/claude-rails && python3 foo.py 2>&1"
+    assert cg.bash_targets_protected_config(command) is False
+    assert run_main(monkeypatch, "Bash", {"command": command}) == 0
+
+
+def test_sed_without_dash_i_on_settings_json_is_not_mutation():
+    assert cg.bash_targets_protected_config("sed 's/x/y/' ~/.claude/settings.json") is False
+
+
+def test_sed_with_dash_i_on_settings_json_is_mutation():
+    assert cg.bash_targets_protected_config("sed -i '' 's/x/y/' ~/.claude/settings.json") is True
+
+
+def test_mutating_verb_on_unrelated_file_in_pipeline_with_protected_cd_is_allowed():
+    command = "cd ~/.claude/hooks/claude-rails && rm /tmp/scratch.txt"
+    assert cg.bash_targets_protected_config(command) is False

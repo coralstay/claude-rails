@@ -10,12 +10,13 @@ SETTINGS_FILE="$HOME/.claude/settings.json"
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
 
 command -v jq >/dev/null 2>&1 || { echo "jq가 필요합니다 (brew install jq)"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "python3가 필요합니다"; exit 1; }
 command -v backlog >/dev/null 2>&1 || echo "경고: backlog CLI가 안 보입니다 (npm i -g backlog.md)"
 
 echo "==> hooks 스크립트 설치: $TARGET_HOOKS_DIR"
 mkdir -p "$TARGET_HOOKS_DIR"
-cp "$REPO_DIR"/hooks/*.sh "$TARGET_HOOKS_DIR/"
-chmod +x "$TARGET_HOOKS_DIR"/*.sh
+cp "$REPO_DIR"/hooks/*.py "$TARGET_HOOKS_DIR/"
+echo "    훅 본체 + 테스트(test_*.py)를 같은 디렉토리에 나란히 설치함 (로컬 실제 구성과 동일)"
 
 echo "==> settings.json에 hooks 병합"
 [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
