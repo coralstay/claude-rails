@@ -1,7 +1,7 @@
 ---
-id: DRAFT-5
+id: TASK-5
 title: README 목적 재정의 + 1장 재작성
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-18 16:12'
 updated_date: '2026-09-18 16:13'

@@ -1,7 +1,7 @@
 ---
-id: DRAFT-2
+id: TASK-2
 title: 'protect_secrets.py: 업스트림 delegation-sink 패턴 이식'
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-18 16:12'
 updated_date: '2026-09-18 16:12'

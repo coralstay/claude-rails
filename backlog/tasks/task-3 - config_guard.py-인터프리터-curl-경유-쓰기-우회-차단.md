@@ -1,7 +1,7 @@
 ---
-id: DRAFT-3
+id: TASK-3
 title: 'config_guard.py: 인터프리터/curl 경유 쓰기 우회 차단'
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-18 16:12'
 updated_date: '2026-09-18 16:12'
