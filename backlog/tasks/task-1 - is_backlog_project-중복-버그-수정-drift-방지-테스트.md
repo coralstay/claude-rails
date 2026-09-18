@@ -1,10 +1,10 @@
 ---
 id: TASK-1
 title: is_backlog_project() 중복 버그 수정 + drift 방지 테스트
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 16:12'
+updated_date: '2026-09-18 16:20'
 labels: []
 dependencies: []
 documentation:

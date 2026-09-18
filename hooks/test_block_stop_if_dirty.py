@@ -67,9 +67,16 @@ def test_has_command_false_for_bogus():
 
 
 def test_is_backlog_project_true(tmp_path):
+    (tmp_path / ".git").mkdir()
     (tmp_path / "backlog").mkdir()
     (tmp_path / "backlog" / "config.yml").write_text("x: 1")
     assert bsd.is_backlog_project(str(tmp_path)) is True
+
+
+def test_is_backlog_project_false_without_git(tmp_path):
+    (tmp_path / "backlog").mkdir()
+    (tmp_path / "backlog" / "config.yml").write_text("x: 1")
+    assert bsd.is_backlog_project(str(tmp_path)) is False
 
 
 def test_is_backlog_project_false(tmp_path):

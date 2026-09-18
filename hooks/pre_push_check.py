@@ -53,7 +53,9 @@ def command_invokes_git_subcommand(command, subcommand):
 
 
 def is_backlog_project(cwd):
-    return os.path.isfile(os.path.join(cwd, "backlog", "config.yml"))
+    return os.path.isdir(os.path.join(cwd, ".git")) and os.path.isfile(
+        os.path.join(cwd, "backlog", "config.yml")
+    )
 
 
 def current_branch(cwd):
@@ -67,7 +69,10 @@ def current_branch(cwd):
 
 def task_view(cwd, task_id):
     result = subprocess.run(
-        ["backlog", "task", "view", task_id, "--json"], cwd=cwd, capture_output=True, text=True
+        ["backlog", "task", "view", task_id, "--json"],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0 or not result.stdout.strip():
         return None
@@ -112,7 +117,9 @@ def main():
     summary = (task.get("finalSummary") or "").strip()
 
     if status != "Done":
-        deny(f"[claude-rails] {task_id} 가 아직 Done 상태가 아닙니다 (현재: {status}). 완료 처리 후 push하세요.")
+        deny(
+            f"[claude-rails] {task_id} 가 아직 Done 상태가 아닙니다 (현재: {status}). 완료 처리 후 push하세요."
+        )
     if not summary:
         deny(
             f"[claude-rails] {task_id} 의 final summary가 비어있습니다. "
