@@ -1,7 +1,7 @@
 ---
-id: DRAFT-4
+id: TASK-4
 title: 'block_dangerous_commands.py: rm -rf 탐지 범위 확장'
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-18 16:12'
 updated_date: '2026-09-18 16:13'

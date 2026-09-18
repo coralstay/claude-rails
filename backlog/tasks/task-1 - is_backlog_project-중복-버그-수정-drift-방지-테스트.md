@@ -1,7 +1,7 @@
 ---
-id: DRAFT-1
+id: TASK-1
 title: is_backlog_project() 중복 버그 수정 + drift 방지 테스트
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-18 16:12'
 updated_date: '2026-09-18 16:12'
