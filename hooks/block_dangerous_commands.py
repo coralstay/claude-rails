@@ -17,17 +17,40 @@ import re
 import sys
 
 CRITICAL_PATTERNS = [
-    (r"rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)", "rm -rf on root or home"),
-    (r"rm\s+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)", "rm -rf on root or home"),
+    (
+        r"rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)",
+        "rm -rf on root or home",
+    ),
+    (
+        r"rm\s+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)",
+        "rm -rf on root or home",
+    ),
     (r":\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:", "fork bomb"),
     (r"\bdd\s+.*of=/dev/(disk|sda|nvme|rdisk)", "dd writing directly to a disk device"),
     (r"\bmkfs(\.\w+)?\s+/dev/", "formatting a device"),
 ]
 
+RM_RF_FLAGS = r"-[a-zA-Z]*(?:r[a-zA-Z]*f[a-zA-Z]*|f[a-zA-Z]*r[a-zA-Z]*)[a-zA-Z]*\b"
+
 HIGH_PATTERNS = CRITICAL_PATTERNS + [
     (r"\bcurl\b[^|]*\|\s*(sudo\s+)?(sh|bash|zsh)\b", "curl | sh"),
     (r"\bwget\b[^|]*\|\s*(sudo\s+)?(sh|bash|zsh)\b", "wget | sh"),
     (r"git\s+reset\s+--hard\b", "git reset --hard"),
+    # rm -rf targeting a path that walks up out of the current directory via
+    # ".." (rm -rf ../, rm -rf ../../foo, rm -rf ./some-dir/../../important).
+    # Approximate on purpose: scoped to a single shell "segment" ([^;&|\n])
+    # so it doesn't reach across an unrelated && / ; / | into another command.
+    (
+        rf"rm\s+{RM_RF_FLAGS}[^;&|\n]*?(?:^|[\s/])\.\.(?=/|$|\s)",
+        "rm -rf escaping the current directory via ..",
+    ),
+    # rm -rf targeting an absolute path that isn't one of a small set of
+    # common safe/temp directories. This can't know the real cwd from the
+    # command string alone, so it's a practical approximation, not a proof.
+    (
+        rf"rm\s+{RM_RF_FLAGS}[^;&|\n]*?(?:^|\s)/(?!tmp\b|var/tmp\b|private/tmp\b|var/folders\b|dev/null\b|\s|$)\S+",
+        "rm -rf on an absolute path outside common safe/temp directories",
+    ),
 ]
 
 STRICT_PATTERNS = HIGH_PATTERNS + [
@@ -35,7 +58,11 @@ STRICT_PATTERNS = HIGH_PATTERNS + [
     (r"\bdocker\s+(system\s+)?prune\b", "docker prune"),
 ]
 
-LEVELS = {"critical": CRITICAL_PATTERNS, "high": HIGH_PATTERNS, "strict": STRICT_PATTERNS}
+LEVELS = {
+    "critical": CRITICAL_PATTERNS,
+    "high": HIGH_PATTERNS,
+    "strict": STRICT_PATTERNS,
+}
 
 
 def get_patterns():
@@ -67,7 +94,9 @@ def main():
 
     violation = find_violation(command)
     if violation:
-        deny(f"[block-dangerous-commands] 위험한 명령이 차단되었습니다: {violation}\n명령: {command}")
+        deny(
+            f"[block-dangerous-commands] 위험한 명령이 차단되었습니다: {violation}\n명령: {command}"
+        )
 
     sys.exit(0)
 
