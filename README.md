@@ -71,49 +71,63 @@ gh issue list --repo <owner>/<repo> --json number,title,updatedAt,author \
 
 ## 1. 왜 이게 있는가
 
-Claude에게 "이 순서로 작업해줘"라고 CLAUDE.md에 적어두는 것만으로는 매번 지켜지지
-않는다. 그래서 두 가지로 나눴다:
+이 저장소를 한 문장으로 정의하면: **Claude가 지켜야 할 규칙 중 기계적으로 검증 가능한
+것은 전부 훅(코드)으로 물리적으로 강제하고, 결국 사람의 판단이 필요한 지점은 정직하게
+사람에게 남기는 경계선을 그어놓은 장치**다. "이 순서로 작업해줘"라고 CLAUDE.md에
+적어두는 자연어 약속만으로는 프롬프트 인젝션, 컨텍스트 압축, Claude 자신의 판단 오류
+같은 이유로 매번 지켜지지 않는다 — 그래서 지킬 수 있는 부분은 아예 우회 불가능한
+코드로 옮겼다.
 
 - **실제로 반드시 막아야 하는 지점** (태스크 없이 코드부터 수정, 테스트 없이 커밋, 커밋
   안 하고 턴 종료, 미완료 상태로 push, 시크릿 파일 열람, 위험한 셸 명령, 훅/설정 자체
   변조 등) → Claude Code의 [hooks](https://code.claude.com/docs/en/hooks)로
-  **물리적으로 차단**한다. Claude가 어겨도 액션 자체가 실행되지 않는다.
-- **판단이 필요한 지점** (계획이 충분히 조사됐는지, 지금 하는 일이 스코프를 벗어났는지) →
-  훅으로 강제할 수 없으므로 CLAUDE.md 안내에 맡기고, 대신 **사람에게 반드시 물어보게**
-  설계했다 (HIL, 7장 "HIL 지점 총정리" 참고).
+  **물리적으로 차단**한다. Claude가 어겨도(고의든 실수든, 프롬프트 인젝션 때문이든)
+  액션 자체가 실행되지 않는다.
+- **판단이 필요한 지점 — Phase 2 백로그 승인, Phase 4.3 push 전 코드 리뷰** → 훅으로
+  대체하지 않는다. 백로그 내용이 맞는지, 코드가 실제로 옳은지는 결국 사람이 봐야 판단할
+  수 있는 문제이기 때문에, 이 두 곳만은 정직하게 사람에게 넘기고 대신 **반드시 멈춰서
+  물어보게**(HIL) 설계했다 (7장 "HIL 지점 총정리" 참고). 모든 걸 훅으로 막으려 하지
+  않는다는 게 이 저장소가 정직한 지점이다.
 
-이 둘을 구분하지 않으면 "강제한다고 해놓고 사실은 안 지켜지는" 문서만 늘어난다. 이
-저장소는 그 구분을 실제 코드(훅 스크립트)로 못박아 둔 것이다.
+이 경계선 자체가 이 저장소의 존재 이유다. 사용자 입장에서 보면 이건 "Claude가 이상한
+방향으로 새거나 지켜야 할 부분을 명시해두고, 여러 보안 위협으로부터 사용자가 의도한
+대로 동작하게 만드는 장치"고, 구현 관점에서 보면 "CLAUDE.md 같은 말로 적힌 약속을
+물리적으로 우회 불가능한 코드로 옮겨서, 프롬프트 인젝션·컨텍스트 압축·Claude 자신의
+판단 오류로 규칙이 잊히는 실패 모드를 원천 차단하는 장치"다 — 이 둘은 같은 것의 두
+표현이다.
 
-**범위가 두 겹으로 나뉘어 있다는 점이 중요하다.** 애초 이 저장소는 backlog.md 워크플로
-전용이었지만(5개 훅), 지금은 그 위에 프로젝트가 backlog.md를 쓰든 안 쓰든 항상 적용되는
-범용 안전/관측 훅 22개가 더해져 총 27개가 됐다:
+**그리고 이 장치의 범위는 "워크플로 준수 도구"보다 한 겹 넓다.** 애초 이 저장소는
+backlog.md 워크플로 전용이었지만(5개 훅), 지금은 그 위에 프로젝트가 backlog.md를
+쓰든 안 쓰든 항상 적용되는 범용 안전/관측 훅 23개가 더해져 총 28개가 됐다:
 
 - **backlog.md 워크플로 전용** (5개, `backlog/config.yml`이 있는 프로젝트에서만 동작) —
   `session_start.py`, `require_active_task.py`, `pre_commit_check.py`,
   `pre_push_check.py`, `block_stop_if_dirty.py`. 원래 bash로 있던 것과 1:1 대응된다.
-- **범용 안전/관측 훅** (22개, backlog.md 여부와 무관하게 항상 동작) — 시크릿 보호,
-  위험 명령 차단, 설정 변조 감시, 세션 로깅, PR 리뷰 보조 등. 대부분
+- **범용 안전/관측 훅** (23개, backlog.md 여부와 무관하게 항상 동작) — 시크릿 보호,
+  위험 명령 차단, 설정 변조 감시, 훅 자신의 복붙 코드가 사본 간에 어긋나지 않는지
+  감시하는 self-guard(`dedup_drift_guard.py`), 세션 로깅, PR 리뷰 보조 등. 대부분
   [karanb192/claude-code-hooks](https://github.com/karanb192/claude-code-hooks)와
   [disler/claude-code-hooks-mastery](https://github.com/disler/claude-code-hooks-mastery)의
   MIT 라이선스 플러그인을 포팅한 것이다 (8장에 훅별로 출처 표시).
 
-즉 "어기면 물리적으로 막는다"는 원칙은 그대로지만, 이제 그 적용 대상이 "백로그
-프로젝트의 워크플로 위반"만이 아니라 "이 컴퓨터에서 Claude Code가 하는 모든 위험한
-행동"까지 넓어졌다.
+즉 이 28개는 "백로그 프로젝트의 워크플로 위반"만 막는 도구가 아니라, **이 컴퓨터에서
+Claude Code가 하는 모든 행동에 대한 보안 경계**다 — backlog.md를 쓰지 않는 프로젝트
+에서도 23개는 항상 켜져 있고, 그중 어느 하나도 Phase 2/4.3처럼 사람 판단이 필요한 것을
+대신 판단해주지는 않는다. 기계적으로 검증 가능한 것과 아닌 것을 정확히 나눈 뒤, 전자는
+코드로, 후자는 사람에게 — 이 구분을 못박아 둔 것이 이 저장소 전체의 설계 원칙이다.
 
 ---
 
 ## 2. 지금 이 컴퓨터에 뭐가 설치돼 있는가
 
-전역 설치되어 있어 **모든 세션에 자동으로 적용**된다. 다만 1장에서 설명했듯 27개 중
+전역 설치되어 있어 **모든 세션에 자동으로 적용**된다. 다만 1장에서 설명했듯 28개 중
 5개(backlog.md 워크플로 훅)만 `backlog/config.yml`이 있는 프로젝트로 한정되고, 나머지
-22개는 프로젝트 종류와 무관하게 항상 동작한다.
+23개는 프로젝트 종류와 무관하게 항상 동작한다.
 
 | 항목         | 경로                                                                                                                                |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 훅 스크립트  | `~/.claude/hooks/claude-rails/*.py` (27개, Python, 실행권한 불필요 — `python3 <path>`로 호출)                                       |
-| 훅 테스트    | `~/.claude/hooks/claude-rails/test_*.py` (훅과 같은 디렉토리에 27개, 1:1 대응 — `.coverage`/`.pytest_cache`도 이 디렉토리에서 생김) |
+| 훅 스크립트  | `~/.claude/hooks/claude-rails/*.py` (28개, Python, 실행권한 불필요 — `python3 <path>`로 호출)                                       |
+| 훅 테스트    | `~/.claude/hooks/claude-rails/test_*.py` (훅과 같은 디렉토리에 28개, 1:1 대응 — `.coverage`/`.pytest_cache`도 이 디렉토리에서 생김) |
 | 전역 설정    | `~/.claude/settings.json` (`hooks` 키만 병합됨, 기존 설정 보존)                                                                     |
 | 전역 지침    | `~/.claude/CLAUDE.md` (`<!-- CLAUDE-RAILS:BEGIN -->` 블록)                                                                          |
 | 설치 전 백업 | `~/.claude/settings.json.bak.<timestamp>`                                                                                           |
@@ -136,9 +150,9 @@ CLAUDE.md는 마커로 중복 방지).
    `PermissionRequest`, `InstructionsLoaded`) 각각에 등록된 스크립트가 `matcher`(도구
    이름)와 `if`(명령 패턴) 조건에 맞을 때 자동 실행된다. 하나의 이벤트/매처에 여러
    훅이 걸려 있으면 등록 순서대로 전부 실행된다.
-3. 27개 중 **backlog.md 워크플로 전용 5개**만 가장 먼저 "지금 이 디렉토리가 backlog.md
+3. 28개 중 **backlog.md 워크플로 전용 5개**만 가장 먼저 "지금 이 디렉토리가 backlog.md
    프로젝트인가(`backlog/config.yml` 존재 여부)"부터 확인하고, 아니면 즉시 통과한다.
-   나머지 **22개는 이 확인 없이 항상 동작**한다 — 시크릿 보호나 위험 명령 차단이 backlog
+   나머지 **23개는 이 확인 없이 항상 동작**한다 — 시크릿 보호나 위험 명령 차단이 backlog
    프로젝트가 아니라고 꺼지면 안 되기 때문이다.
 4. 차단이 필요한 훅은 **exit code 2**로 그 액션 자체를 막는다(편집 불가, 커밋 불가, 턴
    종료 불가, push 불가, 위험 명령 실행 불가 등). exit 2는 Claude Code 훅 사양상 대부분의
@@ -147,7 +161,7 @@ CLAUDE.md는 마커로 중복 방지).
    `systemMessage`) 다른 이벤트(`UserPromptSubmit`/`PreToolUse`)와 짝을 이뤄 우회 차단하는
    방식을 쓴다(`instructions_audit.py`가 대표 사례, 8장 참고).
 5. 차단이 아닌 훅도 많다 — 세션 로그 기록, TODO/FIXME 채점, 포매터 실행, 컨텍스트 비용
-   집계처럼 **강제 없이 관측/보조만 하는 훅**이 27개 중 절반 가까이 된다(4장 범례의 ⚙️).
+   집계처럼 **강제 없이 관측/보조만 하는 훅**이 28개 중 절반 가까이 된다(4장 범례의 ⚙️).
 6. 막히면 Claude는 그 이유(스크립트가 stderr/JSON으로 낸 메시지)를 그대로 보고, 조건을
    충족시킨 뒤 다시 시도한다.
 
@@ -170,8 +184,8 @@ CLAUDE.md는 마커로 중복 방지).
 ## 5. 사용 흐름 — 태스크 하나 따라가기 (backlog.md 워크플로)
 
 까먹고 다시 왔을 때 이 섹션만 봐도 바로 쓸 수 있게, 실제로 손으로 치는 순서를 그대로
-적는다. 이 흐름은 27개 훅 중 **backlog.md 워크플로 전용 5개**(2·3장 참고)가 관여하는
-부분이다 — 시크릿 보호, 위험 명령 차단 같은 나머지 22개는 이 흐름과 별개로 항상
+적는다. 이 흐름은 28개 훅 중 **backlog.md 워크플로 전용 5개**(2·3장 참고)가 관여하는
+부분이다 — 시크릿 보호, 위험 명령 차단 같은 나머지 23개는 이 흐름과 별개로 항상
 백그라운드에서 같이 동작한다.
 
 ```
@@ -200,7 +214,7 @@ CLAUDE.md는 마커로 중복 방지).
 🤖  커밋 안 하고 턴을 끝내려 하면 훅(block_stop_if_dirty.py)이 막아서 계속 진행됨
 
     (위 사이클을 AC 단위로 반복 — 이 사이에도 포매터/시크릿 보호/위험 명령 차단 등
-    범용 훅 22개는 매 Edit/Write/Bash마다 계속 같이 돈다)
+    범용 훅 23개는 매 Edit/Write/Bash마다 계속 같이 돈다)
 
 🧑? 작업 중 AC 밖의 일을 발견하면 Claude가 반드시 먼저 물어봄
     (스코프를 넓힐지, 별도 태스크로 뺄지 — 조용히 확장 안 함)
@@ -340,7 +354,7 @@ Phase 2와 Phase 4.3, 두 곳 모두 **항상, 예외 없이** 발생하는 필�
 
 ---
 
-## 8. 훅 상세 스펙 — 27개, 이벤트별 정리
+## 8. 훅 상세 스펙 — 28개, 이벤트별 정리
 
 각 훅은 완전 독립형(다른 훅 파일을 import하지 않음)이다. 설명은 각 스크립트 최상단의
 모듈 docstring을 그대로 옮긴 것 — 실제로 읽지 않은 동작은 적지 않는다. "출처" 열은
@@ -379,16 +393,17 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 
 #### matcher: `Bash`
 
-| 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                        |
-| ----------------------------- | --------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                  |
-| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                               |
-| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록 |
-| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                 |
-| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                         |
-| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                            |
-| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                              |
-| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                      |
+| 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------- | --------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                                                                                                                                                   |
+| `dedup_drift_guard.py`        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — 여러 훅 파일에 손으로 복붙된 함수(`is_backlog_project()` 등)가 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
+| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                |
+| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                  |
+| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                  |
+| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                          |
+| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                             |
+| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                               |
+| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                                                                                                                                                       |
 
 #### matcher: `Read|Edit|Write|Bash`
 
@@ -584,13 +599,13 @@ claude-rails/
 ├── settings.hooks.json       # ~/.claude/settings.json에 병합되는 hooks 블록
 ├── CLAUDE.md.snippet         # ~/.claude/CLAUDE.md에 추가되는 워크플로 안내
 ├── .claude-rails.json.example
-└── hooks/                     # 27개 훅 + 27개 test_*.py = 54개 파일, 전부 flat
+└── hooks/                     # 28개 훅 + 28개 test_*.py = 56개 파일, 전부 flat
     ├── session_start.py / test_session_start.py                    # 🔒 backlog 전용
     ├── require_active_task.py / test_require_active_task.py        # 🔒 backlog 전용
     ├── pre_commit_check.py / test_pre_commit_check.py               # 🔒 backlog 전용
     ├── pre_push_check.py / test_pre_push_check.py                   # 🔒 backlog 전용
     ├── block_stop_if_dirty.py / test_block_stop_if_dirty.py         # 🔒 backlog 전용
-    └── (나머지 22개 훅 + 대응 test_*.py — 8장 이벤트별 표 참고)
+    └── (나머지 23개 훅 + 대응 test_*.py — 8장 이벤트별 표 참고)
 ```
 
 각 훅과 그 테스트는 같은 디렉토리에 나란히 산다(별도 `tests/` 서브폴더 없음) — 설치
