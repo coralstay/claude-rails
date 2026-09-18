@@ -55,6 +55,51 @@ def test_high_level_blocks_git_reset_hard(monkeypatch):
     assert run_main(monkeypatch, "git reset --hard HEAD~1") == 2
 
 
+def test_high_level_blocks_rm_rf_parent_escape(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf ../other-project") == 2
+
+
+def test_high_level_blocks_rm_rf_deep_parent_escape(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf ../../foo") == 2
+
+
+def test_high_level_blocks_rm_rf_mid_path_parent_escape(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf ./some-dir/../../important") == 2
+
+
+def test_high_level_blocks_rm_rf_absolute_path_outside_cwd(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf /Users/flynn/old-project") == 2
+
+
+def test_critical_level_allows_rm_rf_parent_escape(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "critical")
+    assert run_main(monkeypatch, "rm -rf ../other-project") == 0
+
+
+def test_high_level_allows_rm_rf_relative_subdirectory(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf ./dist") == 0
+
+
+def test_high_level_allows_rm_rf_bare_relative_dir(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf build") == 0
+
+
+def test_high_level_allows_rm_rf_node_modules(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf node_modules") == 0
+
+
+def test_high_level_allows_rm_rf_tmp_absolute_path(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -rf /tmp/scratch") == 0
+
+
 def test_strict_level_blocks_sudo_rm(monkeypatch):
     monkeypatch.setenv("HOOK_SAFETY_LEVEL", "strict")
     assert run_main(monkeypatch, "sudo rm somefile") == 2
@@ -72,7 +117,9 @@ def test_unknown_level_falls_back_to_critical(monkeypatch):
 
 
 def test_no_op_when_command_missing(monkeypatch):
-    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_name": "Bash", "tool_input": {}})))
+    monkeypatch.setattr(
+        "sys.stdin", io.StringIO(json.dumps({"tool_name": "Bash", "tool_input": {}}))
+    )
     with pytest.raises(SystemExit) as exc_info:
         bdc.main()
     assert exc_info.value.code == 0
