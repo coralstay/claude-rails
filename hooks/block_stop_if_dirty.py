@@ -17,7 +17,9 @@ def has_command(name):
 
 
 def is_backlog_project(cwd):
-    return os.path.isfile(os.path.join(cwd, "backlog", "config.yml"))
+    return os.path.isdir(os.path.join(cwd, ".git")) and os.path.isfile(
+        os.path.join(cwd, "backlog", "config.yml")
+    )
 
 
 def has_active_task(cwd):
@@ -58,7 +60,9 @@ def main():
         sys.exit(0)
 
     if is_dirty(cwd):
-        deny("[claude-rails] 커밋하지 않은 변경사항이 있습니다. 작은 단위로 커밋을 마무리한 뒤 턴을 종료하세요.")
+        deny(
+            "[claude-rails] 커밋하지 않은 변경사항이 있습니다. 작은 단위로 커밋을 마무리한 뒤 턴을 종료하세요."
+        )
 
     sys.exit(0)
 

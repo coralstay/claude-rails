@@ -54,7 +54,9 @@ def command_invokes_git_subcommand(command, subcommand):
 
 
 def is_backlog_project(cwd):
-    return os.path.isfile(os.path.join(cwd, "backlog", "config.yml"))
+    return os.path.isdir(os.path.join(cwd, ".git")) and os.path.isfile(
+        os.path.join(cwd, "backlog", "config.yml")
+    )
 
 
 def has_active_task(cwd):
@@ -86,7 +88,9 @@ def configured_test_command(cwd):
 
 
 def run_shell(cwd, command):
-    result = subprocess.run(command, cwd=cwd, shell=True, capture_output=True, text=True)
+    result = subprocess.run(
+        command, cwd=cwd, shell=True, capture_output=True, text=True
+    )
     output = (result.stdout or "") + (result.stderr or "")
     return result.returncode, output
 
@@ -115,7 +119,9 @@ def main():
     if has_active_task(cwd):
         branch = current_branch(cwd)
         if not branch.startswith("task/"):
-            deny(f"[claude-rails] 커밋하기 전에 태스크 브랜치(task/TASK-ID)로 전환하세요. 현재 브랜치: {branch}")
+            deny(
+                f"[claude-rails] 커밋하기 전에 태스크 브랜치(task/TASK-ID)로 전환하세요. 현재 브랜치: {branch}"
+            )
 
     test_command = configured_test_command(cwd)
     if test_command:
