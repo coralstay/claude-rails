@@ -68,6 +68,11 @@
           },
           {
             "type": "command",
+            "command": "python3 $HOME/.claude/hooks/claude-rails/dedup_drift_guard.py",
+            "if": "Bash(git *)"
+          },
+          {
+            "type": "command",
             "command": "python3 $HOME/.claude/hooks/claude-rails/pre_push_check.py",
             "if": "Bash(git *)"
           },

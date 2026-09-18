@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: 복붙된 훅 로직 drift 자동 차단 훅 신설 (dedup_drift_guard)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-18 16:18'
-updated_date: '2026-09-18 16:18'
+updated_date: '2026-09-18 18:48'
 labels: []
 dependencies: []
 documentation:
