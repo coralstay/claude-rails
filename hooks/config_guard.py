@@ -30,7 +30,23 @@ PROTECTED_PATH_PATTERNS = [
 
 PROTECTED_RE = re.compile("|".join(f"(?:{p})" for p in PROTECTED_PATH_PATTERNS))
 
+# Same patterns without the trailing end-of-string anchor, so a protected
+# path is still recognized when it's embedded mid-string rather than being
+# a clean standalone token - e.g. inside a `python3 -c "..."` string literal
+# or followed by other arguments after a `curl -o <path> <url>`.
+_LOOSE_PATTERNS = [p[:-1] if p.endswith("$") else p for p in PROTECTED_PATH_PATTERNS]
+PROTECTED_RE_LOOSE = re.compile("|".join(f"(?:{p})" for p in _LOOSE_PATTERNS))
+
 MUTATING_VERBS = {"rm", "mv", "cp", "truncate", "tee", "dd"}
+
+# General-purpose interpreters/downloaders: any of these can write to (or
+# fetch into) a protected path without ever appearing as one of the
+# MUTATING_VERBS above, e.g. `python3 -c "open('~/.claude/settings.json', 'w')..."`
+# or `curl -o ~/.claude/hooks/x.py <url>`. If one of these verbs shows up in
+# the same subcommand as a protected path anywhere in the string, treat it
+# as mutation - the set of protected paths is small and fixed, so this is
+# low-risk for false positives.
+INTERPRETER_VERBS = {"python3", "python", "node", "ruby", "perl", "curl", "wget"}
 
 REDIRECT_TARGET_RE = re.compile(r">" + r">?\s*(\S+)")
 SUBCOMMAND_SPLIT_RE = re.compile(r"&&|\|\||;|\|")
@@ -62,6 +78,10 @@ def bash_targets_protected_config(command):
 
         tokens = re.split(r"\s+", sub)
         verb = tokens[0] if tokens else ""
+
+        if verb in INTERPRETER_VERBS and PROTECTED_RE_LOOSE.search(sub):
+            return True
+
         if verb == "sed" and "-i" not in tokens:
             continue
         if verb not in MUTATING_VERBS and verb != "sed":
@@ -97,7 +117,9 @@ def main():
     elif tool_name == "Bash":
         command = tool_input.get("command", "")
         if bash_targets_protected_config(command):
-            deny(f"[config-guard] 훅/설정 파일을 변경하는 명령으로 보여 차단되었습니다: {command}")
+            deny(
+                f"[config-guard] 훅/설정 파일을 변경하는 명령으로 보여 차단되었습니다: {command}"
+            )
 
     sys.exit(0)
 
