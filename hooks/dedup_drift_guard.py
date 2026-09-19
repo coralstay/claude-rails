@@ -32,6 +32,31 @@ REGISTRY = {
         "block_stop_if_dirty.py",
         "session_start.py",
     ],
+    "command_invokes_git_subcommand": [
+        "pre_commit_check.py",
+        "pre_push_check.py",
+        "pre_merge_check.py",
+        "pre_push_coverage_check.py",
+        "dedup_drift_guard.py",
+    ],
+    "has_command": [
+        "block_stop_if_dirty.py",
+        "pre_commit_check.py",
+        "pre_push_check.py",
+        "require_active_task.py",
+        "session_start.py",
+    ],
+    "has_active_task": [
+        "block_stop_if_dirty.py",
+        "pre_commit_check.py",
+        "require_active_task.py",
+    ],
+    "run_shell": [
+        "pre_commit_check.py",
+        "pre_push_coverage_check.py",
+    ],
+    # current_branch()는 파일마다 반환값 계약이 다르다(빈 문자열 vs None) —
+    # 의도된 차이로 보이므로 REGISTRY에 등록하지 않는다.
 }
 
 FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
