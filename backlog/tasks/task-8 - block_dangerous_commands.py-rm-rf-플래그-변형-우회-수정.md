@@ -1,10 +1,10 @@
 ---
 id: TASK-8
 title: 'block_dangerous_commands.py: rm -rf 플래그 변형 우회 수정'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-19 01:25'
-updated_date: '2026-09-19 01:26'
+updated_date: '2026-09-19 01:32'
 labels: []
 dependencies: []
 documentation:
