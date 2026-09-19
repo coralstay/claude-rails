@@ -67,6 +67,29 @@ def test_main_exits_cleanly_on_malformed_stdin(monkeypatch):
     assert exc_info.value.code == 0
 
 
+def test_main_exits_cleanly_on_malformed_stdin_when_process_cwd_is_a_backlog_project(
+    monkeypatch, tmp_path
+):
+    """Regression test for the 2026-09-19 bug: malformed stdin makes main()
+    fall back to cwd="". is_backlog_project("") used to resolve os.path.join
+    relative to the *process's actual* OS cwd, so if that happened to be a
+    real backlog.md project (like this repo's root), it looked like a valid
+    project and main() went on to call subprocess.run(cwd="") in
+    has_active_task(), crashing with FileNotFoundError instead of exiting
+    cleanly. Setting the test process's own cwd to a fake backlog project
+    reproduces that regardless of where pytest happens to be invoked from."""
+    (tmp_path / ".git").mkdir()
+    (tmp_path / "backlog").mkdir()
+    (tmp_path / "backlog" / "config.yml").write_text("x: 1")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(rat, "has_command", lambda name: True)
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("not json at all"))
+    with pytest.raises(SystemExit) as exc_info:
+        rat.main()
+    assert exc_info.value.code == 0
+
+
 def test_has_command_true_for_python3():
     assert rat.has_command("python3") is True
 
