@@ -3,9 +3,10 @@
 The 27 hooks in this repo are deliberately self-contained (no shared
 imports between hook files - see require_active_task.py's module
 docstring), which means some functions are hand-copied across several
-files. That's exactly how the 2026-09-18 bug happened: a fix to
+files. That's exactly how a 2026-09-18 bug happened: a fix to
 `is_backlog_project()` landed in require_active_task.py but never
-propagated to its four other copies (see 삽질기록.md).
+propagated to its four other copies (see decision-2 in this repo's
+backlog for the full writeup).
 
 hooks/test_dedup_registry.py already catches this class of bug at the
 pytest level, but only if someone actually runs pytest. This hook makes
