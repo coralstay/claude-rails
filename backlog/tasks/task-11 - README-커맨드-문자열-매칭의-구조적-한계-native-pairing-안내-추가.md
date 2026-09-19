@@ -1,7 +1,7 @@
 ---
-id: DRAFT-5
+id: TASK-11
 title: 'README: 커맨드 문자열 매칭의 구조적 한계 + native pairing 안내 추가'
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-19 01:26'
 updated_date: '2026-09-19 01:26'

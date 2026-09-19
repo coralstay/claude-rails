@@ -1,7 +1,7 @@
 ---
-id: DRAFT-1
+id: TASK-7
 title: 절대/상대경로 verb 우회 근본 수정 (basename 정규화)
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-19 01:25'
 updated_date: '2026-09-19 01:26'

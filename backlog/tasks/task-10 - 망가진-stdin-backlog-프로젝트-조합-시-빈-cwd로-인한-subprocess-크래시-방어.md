@@ -1,7 +1,7 @@
 ---
-id: DRAFT-4
+id: TASK-10
 title: 망가진 stdin + backlog 프로젝트 조합 시 빈 cwd로 인한 subprocess 크래시 방어
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-19 01:25'
 updated_date: '2026-09-19 01:26'
