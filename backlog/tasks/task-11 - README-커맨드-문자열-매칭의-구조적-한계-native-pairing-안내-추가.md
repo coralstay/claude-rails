@@ -1,10 +1,10 @@
 ---
 id: TASK-11
 title: 'README: 커맨드 문자열 매칭의 구조적 한계 + native pairing 안내 추가'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 01:26'
-updated_date: '2026-09-19 01:26'
+updated_date: '2026-09-19 01:45'
 labels: []
 dependencies: []
 documentation:
@@ -19,6 +19,12 @@ documentation:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 README 10장에 커맨드 문자열 정규식/토큰 매칭의 구조적 한계(절대경로·래퍼·인코딩·간접실행 우회 가능성)와 Claude Code 자체 permissions.deny/sandbox와 병행 사용을 권장하는 내용 추가 — 업스트림 protect-secrets.js Native pairing 섹션 인용
-- [ ] #2 README 8장 dedup_drift_guard.py 설명 문구를 TASK-9 완료 후 실제 REGISTRY 함수 목록에 맞게 수정
+- [x] #1 README 10장에 커맨드 문자열 정규식/토큰 매칭의 구조적 한계(절대경로·래퍼·인코딩·간접실행 우회 가능성)와 Claude Code 자체 permissions.deny/sandbox와 병행 사용을 권장하는 내용 추가 — 업스트림 protect-secrets.js Native pairing 섹션 인용
+- [x] #2 README 8장 dedup_drift_guard.py 설명 문구를 TASK-9 완료 후 실제 REGISTRY 함수 목록에 맞게 수정
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+README 10장에 정규식/토큰 커맨드 매칭 방식(block_dangerous_commands.py, config_guard.py, protect_secrets.py, case_insensitive_guard.py, protect_tests.py 등)의 구조적 한계(절대경로/래퍼/인코딩/간접실행 우회 가능성)를 명시하고, 업스트림 protect-secrets.js의 Native pairing 절을 인용해 permissions.deny/sandbox.network.allowedDomains 병행 권장 JSON 예시를 추가했다. 8장 dedup_drift_guard.py 설명도 '등'으로 뭉뚱그리던 것을 TASK-9 이후 REGISTRY의 실제 함수 5개(is_backlog_project, command_invokes_git_subcommand, has_command, has_active_task, run_shell)로 정확히 서술하도록 고쳤다. hooks/dedup_drift_guard.py의 REGISTRY와 각 훅 파일의 실제 매칭 방식(re.search/os.path.basename 등)을 재확인해 README 서술과 일치함을 검증했다.
+<!-- SECTION:FINAL_SUMMARY:END -->
