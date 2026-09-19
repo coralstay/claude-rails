@@ -24,6 +24,21 @@ def test_blocks_rm_rf_home(monkeypatch):
     assert run_main(monkeypatch, "rm -rf ~") == 2
 
 
+def test_blocks_rm_capital_rf_root(monkeypatch):
+    # macOS-style uppercase -Rf spelling.
+    assert run_main(monkeypatch, "rm -Rf /") == 2
+
+
+def test_blocks_rm_separated_short_flags_root(monkeypatch):
+    # -r and -f as two separate tokens instead of one combined -rf.
+    assert run_main(monkeypatch, "rm -r -f /") == 2
+
+
+def test_blocks_rm_gnu_long_flags_root(monkeypatch):
+    # GNU long-flag spelling.
+    assert run_main(monkeypatch, "rm --recursive --force /") == 2
+
+
 def test_blocks_fork_bomb(monkeypatch):
     assert run_main(monkeypatch, ":(){ :|:& };:") == 2
 
@@ -38,6 +53,14 @@ def test_allows_safe_command(monkeypatch):
 
 def test_allows_rm_rf_on_subdirectory(monkeypatch):
     assert run_main(monkeypatch, "rm -rf ./build") == 0
+
+
+def test_allows_rm_verbose_single_file(monkeypatch):
+    assert run_main(monkeypatch, "rm -v foo.txt") == 0
+
+
+def test_allows_rm_interactive_single_file(monkeypatch):
+    assert run_main(monkeypatch, "rm -i bar.txt") == 0
 
 
 def test_high_level_blocks_curl_pipe_sh(monkeypatch):
@@ -73,6 +96,16 @@ def test_high_level_blocks_rm_rf_mid_path_parent_escape(monkeypatch):
 def test_high_level_blocks_rm_rf_absolute_path_outside_cwd(monkeypatch):
     monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
     assert run_main(monkeypatch, "rm -rf /Users/flynn/old-project") == 2
+
+
+def test_high_level_blocks_rm_capital_rf_parent_escape(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -Rf ../other-project") == 2
+
+
+def test_high_level_blocks_rm_separated_short_flags_absolute_path(monkeypatch):
+    monkeypatch.setenv("HOOK_SAFETY_LEVEL", "high")
+    assert run_main(monkeypatch, "rm -r -f /Users/foo/bar") == 2
 
 
 def test_critical_level_allows_rm_rf_parent_escape(monkeypatch):
