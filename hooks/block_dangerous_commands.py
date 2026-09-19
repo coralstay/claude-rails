@@ -16,21 +16,40 @@ import os
 import re
 import sys
 
+# A single "flag token": short form (-r, -rf, -Rf, -v, ...) or GNU long form
+# (--recursive, --force, --verbose, ...). Used both to walk over a cluster of
+# flags after `rm` and, inside the two lookaheads below, to skip past
+# unrelated flags while searching for a recursive/force indicator.
+_FLAG_TOKEN = r"(?:-[a-zA-Z]+|--[a-zA-Z-]+)"
+_RECURSIVE_FLAG = r"(?:-[a-zA-Z]*r[a-zA-Z]*|--recursive)\b"
+_FORCE_FLAG = r"(?:-[a-zA-Z]*f[a-zA-Z]*|--force)\b"
+
+# Matches the flags portion of an `rm` invocation that is recursive AND
+# forced, however that's spelled: a single combined short token in either
+# order and either case (-rf, -fr, -Rf, -RF, ...), flags split into separate
+# words in any order (-r -f, -f -r, -r -v -f, ...), or GNU long flags in any
+# order (--recursive --force, --force --recursive). The two lookaheads each
+# scan forward across the flag cluster (skipping unrelated flags) to confirm
+# a recursive-ish and a force-ish token are both present; the trailing
+# pattern then actually consumes the whole cluster so the caller's `\s+`
+# separator before the target path still lines up. Matching is case
+# insensitive (see find_violation), which is what makes -Rf/-RF/--RECURSIVE
+# work.
+RM_RF_FLAGS = (
+    rf"(?=(?:{_FLAG_TOKEN}\s+)*{_RECURSIVE_FLAG})"
+    rf"(?=(?:{_FLAG_TOKEN}\s+)*{_FORCE_FLAG})"
+    rf"(?:{_FLAG_TOKEN}\s+)*{_FLAG_TOKEN}"
+)
+
 CRITICAL_PATTERNS = [
     (
-        r"rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)",
-        "rm -rf on root or home",
-    ),
-    (
-        r"rm\s+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]*\s+(/|~|\$HOME)\s*($|/\s*$)",
+        rf"rm\s+{RM_RF_FLAGS}\s+(/|~|\$HOME)\s*($|/\s*$)",
         "rm -rf on root or home",
     ),
     (r":\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:", "fork bomb"),
     (r"\bdd\s+.*of=/dev/(disk|sda|nvme|rdisk)", "dd writing directly to a disk device"),
     (r"\bmkfs(\.\w+)?\s+/dev/", "formatting a device"),
 ]
-
-RM_RF_FLAGS = r"-[a-zA-Z]*(?:r[a-zA-Z]*f[a-zA-Z]*|f[a-zA-Z]*r[a-zA-Z]*)[a-zA-Z]*\b"
 
 HIGH_PATTERNS = CRITICAL_PATTERNS + [
     (r"\bcurl\b[^|]*\|\s*(sudo\s+)?(sh|bash|zsh)\b", "curl | sh"),
@@ -72,7 +91,7 @@ def get_patterns():
 
 def find_violation(command):
     for pattern, reason in get_patterns():
-        if re.search(pattern, command):
+        if re.search(pattern, command, re.IGNORECASE):
             return reason
     return None
 
