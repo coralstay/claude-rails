@@ -555,15 +555,23 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
   행동을 막는다. TASK-7에서 절대경로/상대경로로 verb를 위장하는 우회
   (`/usr/bin/git`, `./git` 등)를 `os.path.basename()` 정규화로 실제로 막았지만, 이건
   "발견되면 고칠 수 있는 버그"였다는 뜻이지 "정규식으로 위험한 행동을 완벽히 막을 수
-  있다"는 뜻이 아니다. sudoers 모범 사례가 verb 비교 시 절대경로 전체를 요구하거나
-  basename으로 정규화하는 걸 표준 대응으로 삼는 것 자체가, 이런 매칭 방식이 원래 이런
-  우회에 취약하다는 방증이다. LLM 에이전트 런타임 보안 리서치("One Goal, Many Commands:
-  Characterizing Denylist Fragility in AI Agents" 등)도 정규식 기반 커맨드 차단과
-  문자열 레벨 경로 검사가 인코딩 트릭, alias, 스크립팅 언어, 간접 실행(변수 치환을 거친
-  재조립, 래퍼 스크립트, `eval` 등)으로 우회 가능하다고 결론짓는다. 진짜 확실한 방어는
-  커널 레벨 강제(seccomp-bpf, eBPF, Landlock, bubblewrap 같은 syscall 가로채기)인데,
-  Claude Code 훅은 애초에 커맨드 **문자열**만 건네받는 PreToolUse API이므로 이 훅
-  스크립트들 안에서 syscall 레벨 강제를 구현하는 것 자체가 불가능하다. 이 저장소가 포크해둔
+  있다"는 뜻이 아니다. [sudoers 모범 사례](https://www.tecmint.com/sudoers-configurations-for-setting-sudo-in-linux/)가
+  ([Red Hat 공식 문서](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/security_hardening/managing-sudo-access)도
+  동일) verb 비교 시 절대경로 전체를 요구하거나 basename으로 정규화하는 걸 표준 대응으로
+  삼는 것 자체가, 이런 매칭 방식이 원래 이런 우회에 취약하다는 방증이다. LLM 에이전트
+  런타임 보안 리서치도 같은 결론이다 —
+  [Characterizing Denylist Fragility in AI Agents (arXiv:2606.15549)](https://arxiv.org/pdf/2606.15549)는
+  정규식 기반 커맨드 차단과 문자열 레벨 경로 검사가 인코딩 트릭, alias, 스크립팅 언어,
+  간접 실행(변수 치환을 거친 재조립, 래퍼 스크립트, `eval` 등)으로 우회 가능함을 실측
+  데이터로 보인다. 진짜 확실한 방어는 커널 레벨 강제(seccomp-bpf, eBPF, Landlock,
+  bubblewrap 같은 syscall 가로채기)로 옮기는 것인데, 이미 LLM 에이전트 툴콜을 이렇게
+  가두는 사례들이 있다 —
+  [Sandlock: Confining AI Agent Code with Unprivileged Linux Primitives (arXiv:2605.26298)](https://arxiv.org/pdf/2605.26298),
+  [커널 강제 샌드박스를 직접 구현한 사례](https://dev.to/xenaarchdev/how-i-built-a-kernel-enforced-sandbox-for-llm-agent-tool-calls-fm6).
+  다만 Claude Code 훅은 애초에 커맨드 **문자열**만 건네받는 PreToolUse API이므로 이 훅
+  스크립트들 안에서 syscall 레벨 강제를 구현하는 것 자체가 불가능하다 — 위 사례들처럼 하려면
+  Claude Code 프로세스 자체를 감싸는 별도 샌드박스 레이어가 필요하고, 이는 이 저장소(훅
+  스크립트 모음)의 범위를 벗어난다. 이 저장소가 포크해둔
   업스트림 `protect-secrets.js`도 README의 "Native pairing" 절에서 같은 한계("이 훅은
   커맨드 문자열만 보므로, 스크립트가 직접 여는 파일은 이 훅에 보이지 않는다")를 인정하고,
   Claude Code 자체의 `permissions.deny`(파일 경로 차단 — Bash의 `cat`/리더 명령/`< file`
