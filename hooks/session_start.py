@@ -17,6 +17,8 @@ def has_command(name):
 
 
 def is_backlog_project(cwd):
+    if not cwd:
+        return False
     return os.path.isdir(os.path.join(cwd, ".git")) and os.path.isfile(
         os.path.join(cwd, "backlog", "config.yml")
     )
