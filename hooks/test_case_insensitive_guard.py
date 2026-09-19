@@ -40,7 +40,9 @@ def test_allows_rm_with_no_targets(monkeypatch, tmp_path):
 
 
 def test_no_op_when_command_missing(monkeypatch):
-    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_name": "Bash", "tool_input": {}})))
+    monkeypatch.setattr(
+        "sys.stdin", io.StringIO(json.dumps({"tool_name": "Bash", "tool_input": {}}))
+    )
     with pytest.raises(SystemExit) as exc_info:
         cig.main()
     assert exc_info.value.code == 0
@@ -73,3 +75,25 @@ def test_find_case_collision_missing_directory(tmp_path):
 def test_find_case_collision_none_for_flag_or_empty():
     assert cig.find_case_collision("", "/tmp") is None
     assert cig.find_case_collision("-rf", "/tmp") is None
+
+
+def test_blocks_absolute_path_rm_bypass(monkeypatch, capsys, tmp_path):
+    (tmp_path / "Content").mkdir()
+    code = run_main(monkeypatch, "/bin/rm -rf content", cwd=str(tmp_path))
+    assert code == 2
+    assert "Content" in capsys.readouterr().err
+
+
+def test_blocks_relative_path_rm_bypass(monkeypatch, capsys, tmp_path):
+    (tmp_path / "Content").mkdir()
+    code = run_main(monkeypatch, "./rm -rf content", cwd=str(tmp_path))
+    assert code == 2
+    assert "Content" in capsys.readouterr().err
+
+
+def test_allows_path_looking_argument_outside_verb_position(monkeypatch, tmp_path):
+    # "/bin/rm" appearing only as an argument to another command (not as
+    # the invoked verb, and with nothing following it) must not be treated
+    # as an rm invocation.
+    (tmp_path / "Content").mkdir()
+    assert run_main(monkeypatch, "echo /bin/rm", cwd=str(tmp_path)) == 0
