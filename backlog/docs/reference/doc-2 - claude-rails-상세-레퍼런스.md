@@ -374,19 +374,19 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 
 | 훅                     | 🔒  | 설명                                                                                                                                                                     |
 | ---------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `session_start.py`     | 🔒  | backlog.md 프로젝트면 공식 워크플로 가이드와 무결성 이슈를 컨텍스트로 주입. SessionStart는 차단을 지원하지 않으므로 정보 주입 전용. bash 시절 `session-start.sh`의 후신  |
-| `session_logger.py`    |     | 세션 전체(cwd, git 브랜치, 프롬프트, 파일 변경, bash 명령 — 시크릿은 best-effort로 마스킹)를 JSONL로 기록. `CC_SESSION_LOG_DIR`로 로그 위치 변경 가능(Obsidian vault 등) |
-| `dead_rules_audit.py`  |     | CLAUDE.md 규칙 준수 스코어카드: Claude가 실제로 지킨/어긴 규칙을 집계해, 만성적으로 무시되는 규칙을 훅으로 승격할 후보로 표시                                            |
-| `standup_autopilot.py` |     | 전날 `session_logger.py` 로그에서 미해결 항목을 다음 세션 시작 시 다시 주입                                                                                              |
-| `bounty_board.py`      |     | 세션 시작 시 저장소의 TODO/FIXME/HACK 부채 현황을 보여줌(아래 PostToolUse 항목과 동일 스크립트)                                                                          |
+| [`session_start.py`](../../../hooks/session_start.py)     | 🔒  | backlog.md 프로젝트면 공식 워크플로 가이드와 무결성 이슈를 컨텍스트로 주입. SessionStart는 차단을 지원하지 않으므로 정보 주입 전용. bash 시절 `session-start.sh`의 후신  |
+| [`session_logger.py`](../../../hooks/session_logger.py)    |     | 세션 전체(cwd, git 브랜치, 프롬프트, 파일 변경, bash 명령 — 시크릿은 best-effort로 마스킹)를 JSONL로 기록. `CC_SESSION_LOG_DIR`로 로그 위치 변경 가능(Obsidian vault 등) |
+| [`dead_rules_audit.py`](../../../hooks/dead_rules_audit.py)  |     | CLAUDE.md 규칙 준수 스코어카드: Claude가 실제로 지킨/어긴 규칙을 집계해, 만성적으로 무시되는 규칙을 훅으로 승격할 후보로 표시                                            |
+| [`standup_autopilot.py`](../../../hooks/standup_autopilot.py) |     | 전날 `session_logger.py` 로그에서 미해결 항목을 다음 세션 시작 시 다시 주입                                                                                              |
+| [`bounty_board.py`](../../../hooks/bounty_board.py)      |     | 세션 시작 시 저장소의 TODO/FIXME/HACK 부채 현황을 보여줌(아래 PostToolUse 항목과 동일 스크립트)                                                                          |
 
 ### UserPromptSubmit
 
 | 훅                      | 🔒  | 설명                                                                                                                                                                                                                                                                              |
 | ----------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instructions_audit.py` |     | CLAUDE.md/`.claude/rules/*.md`에서 숨겨진/적대적 지시(제로폭 유니코드, bidi override, 시크릿 유출 지시, curl\|sh 등)를 감지했을 때 세션을 잠그는 락 파일이 있으면 모든 프롬프트를 차단. `HOOK_AUDIT_LEVEL`(critical\|high\|strict, 기본 high), `HOOK_AUDIT_WARN_ONLY=true`로 조정 |
-| `session_logger.py`     |     | 프롬프트를 세션 로그에 기록(이벤트 타입만 다름, 로그 파일은 SessionStart와 동일)                                                                                                                                                                                                  |
-| `dead_end_registry.py`  |     | "그거 안 됐어, 이유는 X" 같은 되돌림 패턴을 프롬프트에서 감지해 현재 세션에서 최근 편집한 파일에 등록                                                                                                                                                                             |
+| [`instructions_audit.py`](../../../hooks/instructions_audit.py) |     | CLAUDE.md/`.claude/rules/*.md`에서 숨겨진/적대적 지시(제로폭 유니코드, bidi override, 시크릿 유출 지시, curl\|sh 등)를 감지했을 때 세션을 잠그는 락 파일이 있으면 모든 프롬프트를 차단. `HOOK_AUDIT_LEVEL`(critical\|high\|strict, 기본 high), `HOOK_AUDIT_WARN_ONLY=true`로 조정 |
+| [`session_logger.py`](../../../hooks/session_logger.py)     |     | 프롬프트를 세션 로그에 기록(이벤트 타입만 다름, 로그 파일은 SessionStart와 동일)                                                                                                                                                                                                  |
+| [`dead_end_registry.py`](../../../hooks/dead_end_registry.py)  |     | "그거 안 됐어, 이유는 X" 같은 되돌림 패턴을 프롬프트에서 감지해 현재 세션에서 최근 편집한 파일에 등록                                                                                                                                                                             |
 
 ### PreToolUse
 
@@ -394,41 +394,41 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 
 | 훅                       | 🔒  | 설명                                                                                                                                          |
 | ------------------------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `require_active_task.py` | 🔒  | In Progress 태스크가 있고 이번 세션에 `backlog task view`로 그 내용을 읽은 적이 있어야만 편집 허용. bash 시절 `require-active-task.sh`의 후신 |
-| `dead_end_registry.py`   |     | 등록된 죽은 접근을 다시 건드리려 하면 경고(차단 아님 — PreToolUse는 차단 이벤트에서 `additionalContext`를 지원하지 않으므로 stderr로만 표시)  |
+| [`require_active_task.py`](../../../hooks/require_active_task.py) | 🔒  | In Progress 태스크가 있고 이번 세션에 `backlog task view`로 그 내용을 읽은 적이 있어야만 편집 허용. bash 시절 `require-active-task.sh`의 후신 |
+| [`dead_end_registry.py`](../../../hooks/dead_end_registry.py)   |     | 등록된 죽은 접근을 다시 건드리려 하면 경고(차단 아님 — PreToolUse는 차단 이벤트에서 `additionalContext`를 지원하지 않으므로 stderr로만 표시)  |
 
 #### matcher: `Bash`
 
 | 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------- | --------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                                                                                                                                                                                                                                                                          |
-| `dedup_drift_guard.py`        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — REGISTRY가 손으로 복붙된 함수 5개(`is_backlog_project`, `command_invokes_git_subcommand`, `has_command`, `has_active_task`, `run_shell`)가 어느 훅 파일들에 등장해야 하는지를 추적해, 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
-| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                                                                                                                                       |
-| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                                                                                                                                         |
-| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                                                                                                                                         |
-| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                                                                                                                                                 |
-| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                                                                                                                                                    |
-| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                                                                                                                                                      |
-| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                                                                                                                                                                                                                                                                              |
+| [`pre_commit_check.py`](../../../hooks/pre_commit_check.py)         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                                                                                                                                                                                                                                                                          |
+| [`dedup_drift_guard.py`](../../../hooks/dedup_drift_guard.py)        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — REGISTRY가 손으로 복붙된 함수 5개(`is_backlog_project`, `command_invokes_git_subcommand`, `has_command`, `has_active_task`, `run_shell`)가 어느 훅 파일들에 등장해야 하는지를 추적해, 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
+| [`pre_push_check.py`](../../../hooks/pre_push_check.py)           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                                                                                                                                       |
+| [`pre_push_coverage_check.py`](../../../hooks/pre_push_coverage_check.py)  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                                                                                                                                         |
+| [`pre_merge_check.py`](../../../hooks/pre_merge_check.py)          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                                                                                                                                         |
+| [`block_dangerous_commands.py`](../../../hooks/block_dangerous_commands.py) | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                                                                                                                                                 |
+| [`pre_git_safety_check.py`](../../../hooks/pre_git_safety_check.py)     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                                                                                                                                                    |
+| [`case_insensitive_guard.py`](../../../hooks/case_insensitive_guard.py)   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                                                                                                                                                      |
+| [`pr_provenance_stamp.py`](../../../hooks/pr_provenance_stamp.py)      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                                                                                                                                                                                                                                                                              |
 
 #### matcher: `Read|Edit|Write|Bash`
 
 | 훅                   | 설명                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_secrets.py` | `.env`, SSH 키, 클라우드 자격증명, 키스토어 등 시크릿 파일의 읽기/수정/유출(Bash로 `cat`/`grep`/`cp` 하는 우회 포함)을 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict, 기본 high). karanb192/claude-code-hooks의 MIT 라이선스 플러그인을 포팅한 것 — 2026-09-19에 업스트림 main과 재동기화해 delegation-sink 탐지(시크릿 파일/변수가 `gemini`/`codex`/`llm` 등 외부 모델 CLI나 `api.openai.com` 등 모델 API 호스트로 흘러가는 패턴 차단)를 추가로 이식함 |
+| [`protect_secrets.py`](../../../hooks/protect_secrets.py) | `.env`, SSH 키, 클라우드 자격증명, 키스토어 등 시크릿 파일의 읽기/수정/유출(Bash로 `cat`/`grep`/`cp` 하는 우회 포함)을 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict, 기본 high). karanb192/claude-code-hooks의 MIT 라이선스 플러그인을 포팅한 것 — 2026-09-19에 업스트림 main과 재동기화해 delegation-sink 탐지(시크릿 파일/변수가 `gemini`/`codex`/`llm` 등 외부 모델 CLI나 `api.openai.com` 등 모델 API 호스트로 흘러가는 패턴 차단)를 추가로 이식함 |
 
 #### matcher: `Bash|Edit|Write`
 
 | 훅                 | 설명                                                                                                                                                                                                                                              |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_tests.py` | 테스트 파일 삭제, 테스트처럼 안 보이게 리네임, skip/xfail로 테스트 비활성화 등 "가짜 그린"을 차단                                                                                                                                                 |
-| `config_guard.py`  | 에이전트 자신의 가드레일 설정(`~/.claude/settings.json`, `~/.claude/hooks/`, `.claude/settings*.json`, `.mcp.json`, 플러그인 매니페스트) 변조 차단 — 존재하지 않던 파일을 새로 만드는 것도 변조로 취급. `CONFIG_GUARD_ALLOW=true`로 1회 우회 가능 |
+| [`protect_tests.py`](../../../hooks/protect_tests.py) | 테스트 파일 삭제, 테스트처럼 안 보이게 리네임, skip/xfail로 테스트 비활성화 등 "가짜 그린"을 차단                                                                                                                                                 |
+| [`config_guard.py`](../../../hooks/config_guard.py)  | 에이전트 자신의 가드레일 설정(`~/.claude/settings.json`, `~/.claude/hooks/`, `.claude/settings*.json`, `.mcp.json`, 플러그인 매니페스트) 변조 차단 — 존재하지 않던 파일을 새로 만드는 것도 변조로 취급. `CONFIG_GUARD_ALLOW=true`로 1회 우회 가능 |
 
 #### matcher 없음 (모든 도구)
 
 | 훅                      | 설명                                                                                                 |
 | ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| `instructions_audit.py` | 잠금 파일이 있으면 어떤 도구 호출도 차단(위 UserPromptSubmit 항목과 동일 스크립트, 같은 락 메커니즘) |
+| [`instructions_audit.py`](../../../hooks/instructions_audit.py) | 잠금 파일이 있으면 어떤 도구 호출도 차단(위 UserPromptSubmit 항목과 동일 스크립트, 같은 락 메커니즘) |
 
 ### PostToolUse
 
@@ -436,69 +436,69 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 
 | 훅                  | 설명                                                                                                                                                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `session_logger.py` | 도구 호출 결과를 세션 로그에 기록                                                                                                                                                                                                                 |
-| `nerf_receipts.py`  | 실패율, 편집 처리량, 모델 버전별 토큰/작업량을 기록하고 모델이 바뀌었을 때 실질적 변화를 표시. transcript의 `message.model`/`message.usage.iterations[]`를 그대로 사용(자기 보고 아님). `~/.claude/hooks-logs/nerf-receipts.jsonl`에 JSONL로 적재 |
+| [`session_logger.py`](../../../hooks/session_logger.py) | 도구 호출 결과를 세션 로그에 기록                                                                                                                                                                                                                 |
+| [`nerf_receipts.py`](../../../hooks/nerf_receipts.py)  | 실패율, 편집 처리량, 모델 버전별 토큰/작업량을 기록하고 모델이 바뀌었을 때 실질적 변화를 표시. transcript의 `message.model`/`message.usage.iterations[]`를 그대로 사용(자기 보고 아님). `~/.claude/hooks-logs/nerf-receipts.jsonl`에 JSONL로 적재 |
 
 #### matcher: `Edit|Write`
 
 | 훅                    | 설명                                                                                                                                                                                    |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auto_stage.py`       | Claude가 수정한 파일을 자동으로 `git add`해서 `git status`가 항상 Claude가 건드린 것과 일치하게 함. git 저장소 밖/파일 밖에서는 조용히 무시                                             |
-| `format_code.py`      | 편집한 파일을 포매팅(ruff format/prettier --write) 후 린트/타입체크(ruff check/tsc --noEmit) 실행, 결과를 `systemMessage`로 피드백만 함(차단 없음). 해당 툴이 PATH에 없으면 조용히 무시 |
-| `dead_rules_audit.py` | 편집이 있을 때마다 규칙 준수 집계를 갱신(SessionStart 항목과 동일 스크립트)                                                                                                             |
-| `bounty_board.py`     | TODO/FIXME/HACK 마커에 "발견 후 경과일수 기반" XP를 매기고, 마커가 포함된 줄을 지우면 지급. 기본 10 + 일당 2(최대 100)                                                                  |
+| [`auto_stage.py`](../../../hooks/auto_stage.py)       | Claude가 수정한 파일을 자동으로 `git add`해서 `git status`가 항상 Claude가 건드린 것과 일치하게 함. git 저장소 밖/파일 밖에서는 조용히 무시                                             |
+| [`format_code.py`](../../../hooks/format_code.py)      | 편집한 파일을 포매팅(ruff format/prettier --write) 후 린트/타입체크(ruff check/tsc --noEmit) 실행, 결과를 `systemMessage`로 피드백만 함(차단 없음). 해당 툴이 PATH에 없으면 조용히 무시 |
+| [`dead_rules_audit.py`](../../../hooks/dead_rules_audit.py) | 편집이 있을 때마다 규칙 준수 집계를 갱신(SessionStart 항목과 동일 스크립트)                                                                                                             |
+| [`bounty_board.py`](../../../hooks/bounty_board.py)     | TODO/FIXME/HACK 마커에 "발견 후 경과일수 기반" XP를 매기고, 마커가 포함된 줄을 지우면 지급. 기본 10 + 일당 2(최대 100)                                                                  |
 
 #### matcher: `Read|Grep|Glob|Bash`
 
 | 훅                | 설명                                                                                                             |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `context_hogs.py` | 도구 결과의 문자 수(÷4 근사치)를 로드한 파일에 귀속시켜, 세션에서 컨텍스트를 가장 많이 먹은 파일 리더보드를 만듦 |
+| [`context_hogs.py`](../../../hooks/context_hogs.py) | 도구 결과의 문자 수(÷4 근사치)를 로드한 파일에 귀속시켜, 세션에서 컨텍스트를 가장 많이 먹은 파일 리더보드를 만듦 |
 
 ### PostToolUseFailure
 
 | 훅                 | 설명                                                                   |
 | ------------------ | ---------------------------------------------------------------------- |
-| `nerf_receipts.py` | 도구 호출 실패도 같은 로그에 기록(위 PostToolUse 항목과 동일 스크립트) |
+| [`nerf_receipts.py`](../../../hooks/nerf_receipts.py) | 도구 호출 실패도 같은 로그에 기록(위 PostToolUse 항목과 동일 스크립트) |
 
 ### Stop
 
 | 훅                       | 🔒  | 설명                                                                                                                                          |
 | ------------------------ | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `block_stop_if_dirty.py` | 🔒  | In Progress 태스크가 있는데 커밋 안 된 변경이 있으면 턴 종료를 차단해 작은 커밋 루프를 끝까지 강제. bash 시절 `block-stop-if-dirty.sh`의 후신 |
-| `nerf_receipts.py`       |     | Stop 이벤트도 같은 로그에 기록                                                                                                                |
-| `standup_autopilot.py`   |     | 이번 턴의 파일/명령 활동을 오늘자 스탠드업 파일(`~/.claude/hooks-logs/standup/<YYYY-MM-DD>.md`)에 추가                                        |
+| [`block_stop_if_dirty.py`](../../../hooks/block_stop_if_dirty.py) | 🔒  | In Progress 태스크가 있는데 커밋 안 된 변경이 있으면 턴 종료를 차단해 작은 커밋 루프를 끝까지 강제. bash 시절 `block-stop-if-dirty.sh`의 후신 |
+| [`nerf_receipts.py`](../../../hooks/nerf_receipts.py)       |     | Stop 이벤트도 같은 로그에 기록                                                                                                                |
+| [`standup_autopilot.py`](../../../hooks/standup_autopilot.py)   |     | 이번 턴의 파일/명령 활동을 오늘자 스탠드업 파일(`~/.claude/hooks-logs/standup/<YYYY-MM-DD>.md`)에 추가                                        |
 
 ### SessionEnd
 
 | 훅                     | 설명                                 |
 | ---------------------- | ------------------------------------ |
-| `session_logger.py`    | 세션 종료를 로그에 기록              |
-| `dead_rules_audit.py`  | 세션 종료 시점 규칙 준수 집계 마무리 |
-| `standup_autopilot.py` | 스탠드업 파일 마무리                 |
+| [`session_logger.py`](../../../hooks/session_logger.py)    | 세션 종료를 로그에 기록              |
+| [`dead_rules_audit.py`](../../../hooks/dead_rules_audit.py)  | 세션 종료 시점 규칙 준수 집계 마무리 |
+| [`standup_autopilot.py`](../../../hooks/standup_autopilot.py) | 스탠드업 파일 마무리                 |
 
 ### ConfigChange (matcher: `user_settings\|project_settings\|local_settings\|policy_settings\|skills`)
 
 | 훅                | 설명                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config_watch.py` | 세션 도중의 모든 설정 변경을 눈에 띄게 알림(기본) 또는 `CONFIG_WATCH_BLOCK=true`로 아예 차단. `config_guard.py`가 에이전트 자신의 편집을 막는 것과 달리, 이건 그 외 경로(악성 postinstall 스크립트의 `settings.json` 재작성 등)로 일어나는 아웃오브밴드 변경을 잡음. `policy_settings` 변경은 절대 차단하지 않고 경고만 함(관리형/엔터프라이즈 설정이라 이 세션이 오버라이드할 대상이 아니므로) |
+| [`config_watch.py`](../../../hooks/config_watch.py) | 세션 도중의 모든 설정 변경을 눈에 띄게 알림(기본) 또는 `CONFIG_WATCH_BLOCK=true`로 아예 차단. `config_guard.py`가 에이전트 자신의 편집을 막는 것과 달리, 이건 그 외 경로(악성 postinstall 스크립트의 `settings.json` 재작성 등)로 일어나는 아웃오브밴드 변경을 잡음. `policy_settings` 변경은 절대 차단하지 않고 경고만 함(관리형/엔터프라이즈 설정이라 이 세션이 오버라이드할 대상이 아니므로) |
 
 ### PreCompact
 
 | 훅                      | 설명                                                                                                                                |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `pre_compact_backup.py` | 컨텍스트 압축으로 버려지기 직전에 전체 transcript를 `~/.claude/hooks-logs/transcript_backups/<session_id>-<timestamp>.jsonl`로 백업 |
+| [`pre_compact_backup.py`](../../../hooks/pre_compact_backup.py) | 컨텍스트 압축으로 버려지기 직전에 전체 transcript를 `~/.claude/hooks-logs/transcript_backups/<session_id>-<timestamp>.jsonl`로 백업 |
 
 ### PermissionRequest
 
 | 훅                         | 설명                                                                                                                                                                                                                                               |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `permission_auto_allow.py` | 실질적 위험이 없는 권한 요청만 자동 승인(Read/Glob/Grep은 항상, Bash는 셸 메타문자 없는 고정된 읽기전용 명령 목록에 한해). "allow"만 추가하며 "deny"는 절대 내리지 않음 — Edit/Write/그 외 Bash/MCP는 건드리지 않고 그대로 일반 권한 흐름으로 넘김 |
+| [`permission_auto_allow.py`](../../../hooks/permission_auto_allow.py) | 실질적 위험이 없는 권한 요청만 자동 승인(Read/Glob/Grep은 항상, Bash는 셸 메타문자 없는 고정된 읽기전용 명령 목록에 한해). "allow"만 추가하며 "deny"는 절대 내리지 않음 — Edit/Write/그 외 Bash/MCP는 건드리지 않고 그대로 일반 권한 흐름으로 넘김 |
 
 ### InstructionsLoaded (matcher: 모두)
 
 | 훅                      | 설명                                                                                                                                                                                                                                                                                                            |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instructions_audit.py` | CLAUDE.md/`.claude/rules/*.md`가 로드될 때 내용을 스캔해 적대적 지시가 있으면 락 파일을 씀. 이 이벤트 자체는 차단을 지원하지 않으므로(exit code/`continue: false` 모두 현재 빌드에서 무시됨), 실제 차단은 락 파일을 확인하는 `UserPromptSubmit`/`PreToolUse` 쪽에서 일어남(위 항목들과 동일 스크립트, 3중 등록) |
+| [`instructions_audit.py`](../../../hooks/instructions_audit.py) | CLAUDE.md/`.claude/rules/*.md`가 로드될 때 내용을 스캔해 적대적 지시가 있으면 락 파일을 씀. 이 이벤트 자체는 차단을 지원하지 않으므로(exit code/`continue: false` 모두 현재 빌드에서 무시됨), 실제 차단은 락 파일을 확인하는 `UserPromptSubmit`/`PreToolUse` 쪽에서 일어남(위 항목들과 동일 스크립트, 3중 등록) |
 
 ---
 
