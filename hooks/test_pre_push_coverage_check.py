@@ -16,7 +16,9 @@ def run_main(monkeypatch, stdin_data):
 
 
 def test_no_op_when_command_is_not_a_push(tmp_path, monkeypatch, capsys):
-    (tmp_path / ".claude-rails.json").write_text(json.dumps({"coverageCommand": "exit 1"}))
+    (tmp_path / ".claude-rails.json").write_text(
+        json.dumps({"coverageCommand": "exit 1"})
+    )
     code = run_main(
         monkeypatch, {"cwd": str(tmp_path), "tool_input": {"command": "git status"}}
     )
@@ -87,7 +89,10 @@ def test_fires_on_dash_c_push(tmp_path, monkeypatch, capsys):
     )
     code = run_main(
         monkeypatch,
-        {"cwd": str(tmp_path), "tool_input": {"command": f"git -C {tmp_path} push -u origin x"}},
+        {
+            "cwd": str(tmp_path),
+            "tool_input": {"command": f"git -C {tmp_path} push -u origin x"},
+        },
     )
     assert code == 0
     payload = json.loads(capsys.readouterr().out)
@@ -97,11 +102,23 @@ def test_fires_on_dash_c_push(tmp_path, monkeypatch, capsys):
 def _init_git_repo(cwd, branch):
     import subprocess
 
-    subprocess.run(["git", "init", "-q", "-b", branch], cwd=cwd, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "init", "-q", "-b", branch], cwd=cwd, check=True, capture_output=True
+    )
     (cwd / "f.txt").write_text("hi")
     subprocess.run(["git", "add", "f.txt"], cwd=cwd, check=True, capture_output=True)
     subprocess.run(
-        ["git", "-c", "user.email=t@example.com", "-c", "user.name=T", "commit", "-q", "-m", "init"],
+        [
+            "git",
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=T",
+            "commit",
+            "-q",
+            "-m",
+            "init",
+        ],
         cwd=cwd,
         check=True,
         capture_output=True,
@@ -128,7 +145,9 @@ def test_log_includes_session_project_branch_task_id(tmp_path, monkeypatch):
 
 def test_log_task_id_is_none_off_task_branch(tmp_path, monkeypatch):
     _init_git_repo(tmp_path, "main")
-    (tmp_path / ".claude-rails.json").write_text(json.dumps({"coverageCommand": "exit 0"}))
+    (tmp_path / ".claude-rails.json").write_text(
+        json.dumps({"coverageCommand": "exit 0"})
+    )
     run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": PUSH_INPUT})
 
     log_file = tmp_path / ".claude-rails" / "coverage-log.jsonl"
@@ -144,9 +163,13 @@ def test_task_id_from_branch():
 
 
 def test_log_appends_across_multiple_push_attempts(tmp_path, monkeypatch):
-    (tmp_path / ".claude-rails.json").write_text(json.dumps({"coverageCommand": "exit 1"}))
+    (tmp_path / ".claude-rails.json").write_text(
+        json.dumps({"coverageCommand": "exit 1"})
+    )
     run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": PUSH_INPUT})
-    (tmp_path / ".claude-rails.json").write_text(json.dumps({"coverageCommand": "exit 0"}))
+    (tmp_path / ".claude-rails.json").write_text(
+        json.dumps({"coverageCommand": "exit 0"})
+    )
     run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": PUSH_INPUT})
 
     log_file = tmp_path / ".claude-rails" / "coverage-log.jsonl"
@@ -163,7 +186,9 @@ def test_append_log_creates_directory(tmp_path):
 
 
 def test_log_path(tmp_path):
-    assert ppc.log_path(str(tmp_path)) == str(tmp_path / ".claude-rails" / "coverage-log.jsonl")
+    assert ppc.log_path(str(tmp_path)) == str(
+        tmp_path / ".claude-rails" / "coverage-log.jsonl"
+    )
 
 
 def test_main_exits_cleanly_on_malformed_stdin(monkeypatch, capsys):
@@ -175,7 +200,9 @@ def test_main_exits_cleanly_on_malformed_stdin(monkeypatch, capsys):
 
 
 def test_configured_coverage_command_reads_file(tmp_path):
-    (tmp_path / ".claude-rails.json").write_text(json.dumps({"coverageCommand": "pytest --cov"}))
+    (tmp_path / ".claude-rails.json").write_text(
+        json.dumps({"coverageCommand": "pytest --cov"})
+    )
     assert ppc.configured_coverage_command(str(tmp_path)) == "pytest --cov"
 
 
@@ -204,3 +231,15 @@ def test_command_invokes_git_subcommand_skips_bare_flag():
 def test_command_invokes_git_subcommand_falls_back_on_unparsable_command():
     unbalanced = 'git push "unterminated'
     assert ppc.command_invokes_git_subcommand(unbalanced, "push") is True
+
+
+def test_command_invokes_git_subcommand_detects_absolute_path_bypass():
+    assert ppc.command_invokes_git_subcommand("/usr/bin/git push", "push") is True
+
+
+def test_command_invokes_git_subcommand_detects_relative_path_bypass():
+    assert ppc.command_invokes_git_subcommand("./git push", "push") is True
+
+
+def test_command_invokes_git_subcommand_ignores_git_outside_verb_position():
+    assert ppc.command_invokes_git_subcommand("echo /usr/bin/git", "push") is False

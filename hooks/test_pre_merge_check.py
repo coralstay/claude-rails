@@ -66,12 +66,26 @@ def test_command_invokes_git_subcommand_false_for_other_subcommand():
 
 
 def test_command_invokes_git_subcommand_skips_bare_flag():
-    assert pmc.command_invokes_git_subcommand("git -q merge --ff-only x", "merge") is True
+    assert (
+        pmc.command_invokes_git_subcommand("git -q merge --ff-only x", "merge") is True
+    )
 
 
 def test_command_invokes_git_subcommand_falls_back_on_unparsable_command():
     unbalanced = 'git merge "unterminated'
     assert pmc.command_invokes_git_subcommand(unbalanced, "merge") is True
+
+
+def test_command_invokes_git_subcommand_detects_absolute_path_bypass():
+    assert pmc.command_invokes_git_subcommand("/usr/bin/git merge x", "merge") is True
+
+
+def test_command_invokes_git_subcommand_detects_relative_path_bypass():
+    assert pmc.command_invokes_git_subcommand("./git merge x", "merge") is True
+
+
+def test_command_invokes_git_subcommand_ignores_git_outside_verb_position():
+    assert pmc.command_invokes_git_subcommand("echo /usr/bin/git", "merge") is False
 
 
 def test_main_exits_cleanly_on_malformed_stdin(monkeypatch):

@@ -184,6 +184,20 @@ def test_command_invokes_git_subcommand_falls_back_on_unparsable_command():
     assert pcc.command_invokes_git_subcommand(unbalanced, "push") is False
 
 
+def test_command_invokes_git_subcommand_detects_absolute_path_bypass():
+    assert (
+        pcc.command_invokes_git_subcommand("/usr/bin/git commit -m x", "commit") is True
+    )
+
+
+def test_command_invokes_git_subcommand_detects_relative_path_bypass():
+    assert pcc.command_invokes_git_subcommand("./git commit -m x", "commit") is True
+
+
+def test_command_invokes_git_subcommand_ignores_git_outside_verb_position():
+    assert pcc.command_invokes_git_subcommand("echo /usr/bin/git", "commit") is False
+
+
 def test_configured_test_command_reads_file(tmp_path):
     (tmp_path / ".claude-rails.json").write_text(
         json.dumps({"testCommand": "pytest -q"})

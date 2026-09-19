@@ -36,7 +36,7 @@ def command_invokes_git_subcommand(command, subcommand):
 
     i = 0
     while i < len(tokens):
-        if tokens[i] != "git":
+        if os.path.basename(tokens[i]) != "git":
             i += 1
             continue
         j = i + 1
@@ -79,12 +79,14 @@ def task_id_from_branch(branch):
     etc.)."""
     prefix = "task/"
     if branch.startswith(prefix):
-        return branch[len(prefix):]
+        return branch[len(prefix) :]
     return None
 
 
 def run_shell(cwd, command):
-    result = subprocess.run(command, cwd=cwd, shell=True, capture_output=True, text=True)
+    result = subprocess.run(
+        command, cwd=cwd, shell=True, capture_output=True, text=True
+    )
     output = (result.stdout or "") + (result.stderr or "")
     return result.returncode, output
 
@@ -141,10 +143,13 @@ def main():
             "hookEventName": "PreToolUse",
             "permissionDecision": "allow" if passed else "deny",
             "permissionDecisionReason": (
-                "커버리지 기준 통과" if passed else f"커버리지 기준 미달 (exit {exit_code})"
+                "커버리지 기준 통과"
+                if passed
+                else f"커버리지 기준 미달 (exit {exit_code})"
             ),
             "systemMessage": (
-                f"[claude-rails] 커버리지 리포트 ('{command}', exit {exit_code}):\n" + output[-4000:]
+                f"[claude-rails] 커버리지 리포트 ('{command}', exit {exit_code}):\n"
+                + output[-4000:]
             ),
         }
     }
