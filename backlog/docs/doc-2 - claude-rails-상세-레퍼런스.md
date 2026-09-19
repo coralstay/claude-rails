@@ -2,10 +2,9 @@
 id: doc-2
 title: claude-rails 상세 레퍼런스
 type: specification
-created_date: "2026-09-19 04:46"
-updated_date: "2026-09-19 04:46"
+created_date: '2026-09-19 04:46'
+updated_date: '2026-09-19 13:07'
 ---
-
 # claude-rails 상세 레퍼런스
 
 README.md는 의도만 짧게 담고, 이 문서가 전체 스펙이다 — 운영/개인 레포 구분, 전체
