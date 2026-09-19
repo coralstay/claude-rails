@@ -4,8 +4,9 @@ title: README/doc-2 톤 윤문 — 공격적인 표현 완화
 status: Done
 assignee: []
 created_date: '2026-09-19 04:51'
-updated_date: '2026-09-19 04:52'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

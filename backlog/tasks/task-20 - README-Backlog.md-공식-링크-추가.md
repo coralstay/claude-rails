@@ -4,8 +4,9 @@ title: 'README: Backlog.md 공식 링크 추가'
 status: Done
 assignee: []
 created_date: '2026-09-19 12:42'
-updated_date: '2026-09-19 12:42'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

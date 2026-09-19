@@ -4,8 +4,9 @@ title: 'README: TASK-11 근거 자료에 실제 링크 추가'
 status: Done
 assignee: []
 created_date: '2026-09-19 01:48'
-updated_date: '2026-09-19 01:49'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 ---
 

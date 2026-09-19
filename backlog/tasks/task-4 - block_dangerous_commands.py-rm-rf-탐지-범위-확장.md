@@ -4,8 +4,9 @@ title: 'block_dangerous_commands.py: rm -rf 탐지 범위 확장'
 status: Done
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 18:47'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/block_dangerous_commands.py

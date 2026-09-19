@@ -4,8 +4,9 @@ title: 복붙된 훅 로직 drift 자동 차단 훅 신설 (dedup_drift_guard)
 status: Done
 assignee: []
 created_date: '2026-09-18 16:18'
-updated_date: '2026-09-18 18:50'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - 삽질기록.md

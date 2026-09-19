@@ -4,8 +4,9 @@ title: is_backlog_project() 중복 버그 수정 + drift 방지 테스트
 status: Done
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 18:35'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - 삽질기록.md

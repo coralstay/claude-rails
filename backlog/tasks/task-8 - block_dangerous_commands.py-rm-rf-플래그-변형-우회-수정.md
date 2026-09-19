@@ -4,8 +4,9 @@ title: 'block_dangerous_commands.py: rm -rf 플래그 변형 우회 수정'
 status: Done
 assignee: []
 created_date: '2026-09-19 01:25'
-updated_date: '2026-09-19 01:35'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/block_dangerous_commands.py

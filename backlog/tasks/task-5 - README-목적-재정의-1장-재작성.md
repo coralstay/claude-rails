@@ -4,8 +4,9 @@ title: README 목적 재정의 + 1장 재작성
 status: Done
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 18:53'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - README.md

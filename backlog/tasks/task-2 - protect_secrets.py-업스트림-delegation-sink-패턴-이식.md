@@ -4,8 +4,9 @@ title: 'protect_secrets.py: 업스트림 delegation-sink 패턴 이식'
 status: Done
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 18:40'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/protect_secrets.py

@@ -4,8 +4,9 @@ title: README 어투를 더 정중한 존댓말로 재작성 + 훅 목록 2곳�
 status: Done
 assignee: []
 created_date: '2026-09-19 05:29'
-updated_date: '2026-09-19 05:31'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

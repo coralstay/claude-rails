@@ -4,8 +4,9 @@ title: 'config_guard.py: 인터프리터/curl 경유 쓰기 우회 차단'
 status: Done
 assignee: []
 created_date: '2026-09-18 16:12'
-updated_date: '2026-09-18 18:43'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/config_guard.py

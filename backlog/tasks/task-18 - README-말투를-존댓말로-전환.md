@@ -4,8 +4,9 @@ title: README 말투를 존댓말로 전환
 status: Done
 assignee: []
 created_date: '2026-09-19 05:23'
-updated_date: '2026-09-19 05:24'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

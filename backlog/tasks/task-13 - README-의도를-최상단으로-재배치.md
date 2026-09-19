@@ -4,8 +4,9 @@ title: 'README: 의도를 최상단으로 재배치'
 status: Done
 assignee: []
 created_date: '2026-09-19 04:32'
-updated_date: '2026-09-19 04:34'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 
