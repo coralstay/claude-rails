@@ -8,6 +8,7 @@ protect-tests plugin (MIT license).
 Fully self-contained: no imports from any other file in this repo."""
 
 import json
+import os
 import re
 import shlex
 import sys
@@ -40,13 +41,18 @@ def check_bash(command):
     except ValueError:
         tokens = command.split()
 
-    is_delete = any(t in ("rm", "unlink") for t in tokens)
-    is_rename = "mv" in tokens
+    basenames = [os.path.basename(t) for t in tokens]
+    is_delete = any(b in ("rm", "unlink") for b in basenames)
+    is_rename = "mv" in basenames
 
     if not (is_delete or is_rename):
         return
 
-    paths = [t for t in tokens if not t.startswith("-") and t not in ("rm", "unlink", "mv")]
+    paths = [
+        t
+        for t, b in zip(tokens, basenames)
+        if not t.startswith("-") and b not in ("rm", "unlink", "mv")
+    ]
     for path in paths:
         if is_test_file(path):
             action = "삭제" if is_delete else "이름 변경"

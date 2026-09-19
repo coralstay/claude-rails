@@ -66,10 +66,12 @@ def main():
     except ValueError:
         sys.exit(0)
 
-    if "rm" not in tokens:
+    basenames = [os.path.basename(t) for t in tokens]
+    if "rm" not in basenames:
         sys.exit(0)
 
-    targets = [t for t in tokens[tokens.index("rm") + 1 :] if not t.startswith("-")]
+    rm_index = basenames.index("rm")
+    targets = [t for t in tokens[rm_index + 1 :] if not t.startswith("-")]
     for target in targets:
         collision = find_case_collision(target, cwd)
         if collision:

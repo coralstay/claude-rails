@@ -42,7 +42,10 @@ def test_blocks_write_adding_skip_decorator(monkeypatch, capsys):
     code = run_main(
         monkeypatch,
         "Write",
-        {"file_path": "test_foo.py", "content": "@pytest.mark.skip\ndef test_x(): pass"},
+        {
+            "file_path": "test_foo.py",
+            "content": "@pytest.mark.skip\ndef test_x(): pass",
+        },
     )
     assert code == 2
     assert "skip" in capsys.readouterr().err
@@ -52,7 +55,11 @@ def test_blocks_edit_adding_xfail(monkeypatch):
     code = run_main(
         monkeypatch,
         "Edit",
-        {"file_path": "test_foo.py", "old_string": "def test_x(): pass", "new_string": "@pytest.mark.xfail\ndef test_x(): pass"},
+        {
+            "file_path": "test_foo.py",
+            "old_string": "def test_x(): pass",
+            "new_string": "@pytest.mark.xfail\ndef test_x(): pass",
+        },
     )
     assert code == 2
 
@@ -61,7 +68,11 @@ def test_allows_normal_test_edit(monkeypatch):
     code = run_main(
         monkeypatch,
         "Edit",
-        {"file_path": "test_foo.py", "old_string": "assert 1 == 1", "new_string": "assert 2 == 2"},
+        {
+            "file_path": "test_foo.py",
+            "old_string": "assert 1 == 1",
+            "new_string": "assert 2 == 2",
+        },
     )
     assert code == 0
 
@@ -97,3 +108,24 @@ def test_is_test_file_variants():
 
 def test_check_bash_no_op_when_command_empty():
     pt.check_bash("")  # should not raise/exit
+
+
+def test_blocks_absolute_path_rm_bypass(monkeypatch):
+    assert run_main(monkeypatch, "Bash", {"command": "/bin/rm test_foo.py"}) == 2
+
+
+def test_blocks_relative_path_rm_bypass(monkeypatch):
+    assert run_main(monkeypatch, "Bash", {"command": "./rm test_foo.py"}) == 2
+
+
+def test_blocks_absolute_path_mv_bypass(monkeypatch):
+    assert (
+        run_main(monkeypatch, "Bash", {"command": "/bin/mv test_foo.py foo.py.bak"})
+        == 2
+    )
+
+
+def test_allows_path_looking_argument_outside_verb_position(monkeypatch):
+    # "/bin/rm" appearing only as an argument to another command (with no
+    # target following it) must not be treated as an rm invocation.
+    assert run_main(monkeypatch, "Bash", {"command": "echo /bin/rm"}) == 0
