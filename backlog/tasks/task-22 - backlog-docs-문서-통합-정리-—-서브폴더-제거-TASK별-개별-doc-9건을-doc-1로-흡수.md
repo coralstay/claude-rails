@@ -4,8 +4,9 @@ title: 'backlog/docs 문서 통합 정리 — 서브폴더 제거, TASK별 개�
 status: Done
 assignee: []
 created_date: '2026-09-19 13:05'
-updated_date: '2026-09-19 13:08'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-2
 dependencies: []
 ---
 

@@ -4,8 +4,9 @@ title: README 재작성 v3 — 왜/무엇/특징 확장 + Claude Code 생애주�
 status: Done
 assignee: []
 created_date: '2026-09-19 05:05'
-updated_date: '2026-09-19 05:07'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

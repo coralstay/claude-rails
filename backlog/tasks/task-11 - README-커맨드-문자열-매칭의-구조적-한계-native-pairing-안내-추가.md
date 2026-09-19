@@ -4,8 +4,9 @@ title: 'README: 커맨드 문자열 매칭의 구조적 한계 + native pairing 
 status: Done
 assignee: []
 created_date: '2026-09-19 01:26'
-updated_date: '2026-09-19 01:45'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - README.md

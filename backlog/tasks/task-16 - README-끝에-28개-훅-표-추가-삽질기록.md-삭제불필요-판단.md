@@ -4,8 +4,9 @@ title: README 끝에 28개 훅 표 추가 + 삽질기록.md 삭제(불필요 판
 status: Done
 assignee: []
 created_date: '2026-09-19 04:55'
-updated_date: '2026-09-19 04:57'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

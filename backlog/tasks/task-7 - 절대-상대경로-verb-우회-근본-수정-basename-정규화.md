@@ -4,8 +4,9 @@ title: 절대/상대경로 verb 우회 근본 수정 (basename 정규화)
 status: Done
 assignee: []
 created_date: '2026-09-19 01:25'
-updated_date: '2026-09-19 01:31'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - README.md

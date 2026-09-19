@@ -4,8 +4,9 @@ title: 'README를 의도 중심으로 대폭 축약, 상세 스펙은 backlog do
 status: Done
 assignee: []
 created_date: '2026-09-19 04:45'
-updated_date: '2026-09-19 04:46'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

@@ -4,8 +4,9 @@ title: dedup_drift_guard.py REGISTRY 확장
 status: Done
 assignee: []
 created_date: '2026-09-19 01:25'
-updated_date: '2026-09-19 01:38'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/dedup_drift_guard.py

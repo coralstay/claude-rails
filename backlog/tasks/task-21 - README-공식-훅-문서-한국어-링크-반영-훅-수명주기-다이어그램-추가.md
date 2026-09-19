@@ -4,8 +4,9 @@ title: 'README: 공식 훅 문서 한국어 링크 반영 + 훅 수명주기 다
 status: Done
 assignee: []
 created_date: '2026-09-19 12:49'
-updated_date: '2026-09-19 12:50'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-1
 dependencies: []
 ---
 

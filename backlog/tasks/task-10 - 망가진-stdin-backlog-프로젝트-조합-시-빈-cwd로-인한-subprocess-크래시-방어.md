@@ -4,8 +4,9 @@ title: 망가진 stdin + backlog 프로젝트 조합 시 빈 cwd로 인한 subpr
 status: Done
 assignee: []
 created_date: '2026-09-19 01:25'
-updated_date: '2026-09-19 01:42'
+updated_date: '2026-09-19 14:43'
 labels: []
+milestone: m-0
 dependencies: []
 documentation:
   - hooks/block_stop_if_dirty.py
