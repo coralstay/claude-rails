@@ -77,7 +77,7 @@ def bash_targets_protected_config(command):
                 return True
 
         tokens = re.split(r"\s+", sub)
-        verb = tokens[0] if tokens else ""
+        verb = os.path.basename(tokens[0]) if tokens else ""
 
         if verb in INTERPRETER_VERBS and PROTECTED_RE_LOOSE.search(sub):
             return True
