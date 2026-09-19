@@ -50,5 +50,5 @@ def test_is_backlog_project_identical_across_all_hooks():
         "is_backlog_project() has drifted out of sync across hooks. "
         f"{baseline_module} disagrees with: {mismatched}. "
         "Every self-contained hook copy must apply the same fix together "
-        "(see 삽질기록.md 2026-09-10)."
+        "(see decision-2 in this repo's backlog for the 2026-09-10 story)."
     )
