@@ -47,7 +47,7 @@ def command_invokes_git_subcommand(command, subcommand):
 
     i = 0
     while i < len(tokens):
-        if tokens[i] != "git":
+        if os.path.basename(tokens[i]) != "git":
             i += 1
             continue
         j = i + 1

@@ -13,6 +13,7 @@ before the subcommand) is still recognized as a merge, not just
 Fully self-contained: no imports from any other file in this repo."""
 
 import json
+import os
 import shlex
 import sys
 
@@ -30,7 +31,7 @@ def command_invokes_git_subcommand(command, subcommand):
 
     i = 0
     while i < len(tokens):
-        if tokens[i] != "git":
+        if os.path.basename(tokens[i]) != "git":
             i += 1
             continue
         j = i + 1

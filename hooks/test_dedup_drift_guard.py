@@ -109,6 +109,20 @@ def test_command_invokes_git_subcommand_false_for_other_subcommand():
     assert ddg.command_invokes_git_subcommand("git -C /p push", "commit") is False
 
 
+def test_command_invokes_git_subcommand_detects_absolute_path_bypass():
+    assert (
+        ddg.command_invokes_git_subcommand("/usr/bin/git commit -m x", "commit") is True
+    )
+
+
+def test_command_invokes_git_subcommand_detects_relative_path_bypass():
+    assert ddg.command_invokes_git_subcommand("./git commit -m x", "commit") is True
+
+
+def test_command_invokes_git_subcommand_ignores_git_outside_verb_position():
+    assert ddg.command_invokes_git_subcommand("echo /usr/bin/git", "commit") is False
+
+
 def test_registry_files_present_true_against_real_repo():
     import os
 

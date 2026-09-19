@@ -184,6 +184,18 @@ def test_command_invokes_git_subcommand_falls_back_on_unparsable_command():
     assert ppc.command_invokes_git_subcommand(unbalanced, "push") is False
 
 
+def test_command_invokes_git_subcommand_detects_absolute_path_bypass():
+    assert ppc.command_invokes_git_subcommand("/usr/bin/git push", "push") is True
+
+
+def test_command_invokes_git_subcommand_detects_relative_path_bypass():
+    assert ppc.command_invokes_git_subcommand("./git push", "push") is True
+
+
+def test_command_invokes_git_subcommand_ignores_git_outside_verb_position():
+    assert ppc.command_invokes_git_subcommand("echo /usr/bin/git", "push") is False
+
+
 def test_current_branch_real_git(tmp_path):
     subprocess.run(
         ["git", "init", "-q", "-b", "task/TASK-9"],
