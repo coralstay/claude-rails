@@ -393,17 +393,17 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 
 #### matcher: `Bash`
 
-| 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                                                                                                                                                         |
-| ----------------------------- | --------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                                                                                                                                                   |
-| `dedup_drift_guard.py`        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — 여러 훅 파일에 손으로 복붙된 함수(`is_backlog_project()` 등)가 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
-| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                |
-| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                  |
-| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                  |
-| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                          |
-| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                             |
-| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                               |
-| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                                                                                                                                                       |
+| 훅                            | if 조건               | 🔒  | 설명                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------- | --------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre_commit_check.py`         | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치에서만 커밋 허용 + `.claude-rails.json`의 `testCommand` 설정 시 테스트 통과 필수. bash 시절 `pre-commit-check.sh`의 후신                                                                                                                                                                                                                                                                                                          |
+| `dedup_drift_guard.py`        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — REGISTRY가 손으로 복붙된 함수 5개(`is_backlog_project`, `command_invokes_git_subcommand`, `has_command`, `has_active_task`, `run_shell`)가 어느 훅 파일들에 등장해야 하는지를 추적해, 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
+| `pre_push_check.py`           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                                                                                                                                       |
+| `pre_push_coverage_check.py`  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                                                                                                                                         |
+| `pre_merge_check.py`          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                                                                                                                                         |
+| `block_dangerous_commands.py` | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                                                                                                                                                 |
+| `pre_git_safety_check.py`     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                                                                                                                                                    |
+| `case_insensitive_guard.py`   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                                                                                                                                                      |
+| `pr_provenance_stamp.py`      | `Bash(gh pr create*)` |     | `gh pr create` 실행 전에 PR 본문에 provenance 정보(프롬프트 수, 테스트 실행 여부, Claude가 작성한 파일 수)를 자동 삽입                                                                                                                                                                                                                                                                                                                              |
 
 #### matcher: `Read|Edit|Write|Bash`
 
@@ -548,6 +548,52 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
   흘러가는지"까지는 추적하지 못하기 때문이다. 이건 버그가 아니라 이 탐지 방식의 근본적인
   한계로, 고치려면 커맨드 매칭이 아닌 다른 접근(예: 파일 접근 자체를 이 훅의 기존
   `is_protected_path` 경로로 별도 차단)이 필요하다.
+- **커맨드 문자열 정규식/토큰 매칭 방식 자체가 구조적 한계다 — 이 저장소 대부분의 Bash
+  매칭 훅이 이 방식이다**: `block_dangerous_commands.py`, `config_guard.py`,
+  `protect_secrets.py`, `case_insensitive_guard.py`, `protect_tests.py`를 비롯해 이
+  저장소의 Bash 훅 대부분이 `tool_input.command` 문자열을 정규식/토큰으로 검사해 위험한
+  행동을 막는다. TASK-7에서 절대경로/상대경로로 verb를 위장하는 우회
+  (`/usr/bin/git`, `./git` 등)를 `os.path.basename()` 정규화로 실제로 막았지만, 이건
+  "발견되면 고칠 수 있는 버그"였다는 뜻이지 "정규식으로 위험한 행동을 완벽히 막을 수
+  있다"는 뜻이 아니다. sudoers 모범 사례가 verb 비교 시 절대경로 전체를 요구하거나
+  basename으로 정규화하는 걸 표준 대응으로 삼는 것 자체가, 이런 매칭 방식이 원래 이런
+  우회에 취약하다는 방증이다. LLM 에이전트 런타임 보안 리서치("One Goal, Many Commands:
+  Characterizing Denylist Fragility in AI Agents" 등)도 정규식 기반 커맨드 차단과
+  문자열 레벨 경로 검사가 인코딩 트릭, alias, 스크립팅 언어, 간접 실행(변수 치환을 거친
+  재조립, 래퍼 스크립트, `eval` 등)으로 우회 가능하다고 결론짓는다. 진짜 확실한 방어는
+  커널 레벨 강제(seccomp-bpf, eBPF, Landlock, bubblewrap 같은 syscall 가로채기)인데,
+  Claude Code 훅은 애초에 커맨드 **문자열**만 건네받는 PreToolUse API이므로 이 훅
+  스크립트들 안에서 syscall 레벨 강제를 구현하는 것 자체가 불가능하다. 이 저장소가 포크해둔
+  업스트림 `protect-secrets.js`도 README의 "Native pairing" 절에서 같은 한계("이 훅은
+  커맨드 문자열만 보므로, 스크립트가 직접 여는 파일은 이 훅에 보이지 않는다")를 인정하고,
+  Claude Code 자체의 `permissions.deny`(파일 경로 차단 — Bash의 `cat`/리더 명령/`< file`
+  리다이렉트에도 적용됨)와 샌드박스 네트워크 화이트리스트
+  (`sandbox.network.allowedDomains` + `strictAllowlist`)를 병행하라고 권한다:
+
+  ```json
+  {
+    "permissions": {
+      "deny": [
+        "Read(.env)",
+        "Read(.env.*)",
+        "Read(~/.ssh/**)",
+        "Read(~/.aws/**)",
+        "Read(**/*.pem)"
+      ]
+    },
+    "sandbox": {
+      "enabled": true,
+      "network": {
+        "allowedDomains": ["github.com", "registry.npmjs.org"],
+        "strictAllowlist": true
+      }
+    }
+  }
+  ```
+
+  이 저장소의 훅들도 같은 원칙을 따라야 한다 — 커맨드 문자열 매칭은 "발견된 구멍을 계속
+  찾아서 땜질하는" 층이지 완결된 방어선이 아니며, 실제 방어선은 이 훅들을 Claude Code
+  자체의 `permissions.deny`/sandbox 설정과 같이 쓰는 조합이다.
 
 ---
 
