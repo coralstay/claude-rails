@@ -37,18 +37,84 @@ NO_FUNCTION_BODY = """
         return True
     """
 
+# Baseline (identical-across-files) stub for every function currently in
+# ddg.REGISTRY. Real REGISTRY entries can cover more than just
+# is_backlog_project (see hooks/dedup_drift_guard.py), and
+# registry_files_present() requires *every* file referenced by *any*
+# REGISTRY entry to exist, so a fake hooks/ dir must supply a baseline
+# definition for each function a given file is registered under - not just
+# the one function a test cares about perturbing.
+BASELINE_BODIES = {
+    "is_backlog_project": IDENTICAL_BODY,
+    "command_invokes_git_subcommand": """
+        def command_invokes_git_subcommand(command, subcommand):
+            return subcommand in command.split()
+        """,
+    "has_command": """
+        def has_command(name):
+            import shutil
+            return shutil.which(name) is not None
+        """,
+    "has_active_task": """
+        def has_active_task(cwd):
+            return True
+        """,
+    "run_shell": """
+        def run_shell(cwd, command):
+            return ""
+        """,
+}
 
-def make_fake_registry_dir(tmp_path, monkeypatch, bodies):
-    """bodies: dict of filename -> source text. Creates tmp_path/hooks/
-    with one file per entry in ddg.REGISTRY['is_backlog_project'], using
-    `bodies` to override specific files (defaulting to IDENTICAL_BODY),
-    and points the guard's REGISTRY files at that fake directory via cwd.
+DIFFERENT_HAS_COMMAND_BODY = """
+    def has_command(name):
+        import shutil
+        return shutil.which(name) is None
     """
+
+
+def build_full_hooks_dir(tmp_path, overrides=None):
+    """Creates tmp_path/hooks/ with one file per entry referenced anywhere
+    in ddg.REGISTRY. Every file gets a baseline (identical) stub for each
+    function it's registered under, so the whole fake tree satisfies
+    registry_files_present() and, by default, finds zero drift.
+
+    `overrides`: dict of filename -> {function_name: source text}, used to
+    replace one function's stub in one file (e.g. to introduce drift, or to
+    omit a function entirely by defining something else under that key).
+    """
+    overrides = overrides or {}
     hooks_dir = tmp_path / "hooks"
     hooks_dir.mkdir()
-    for filename in ddg.REGISTRY["is_backlog_project"]:
-        write_hook(hooks_dir, filename, bodies.get(filename, IDENTICAL_BODY))
+
+    file_functions = {}
+    for function_name, files in ddg.REGISTRY.items():
+        for filename in files:
+            file_functions.setdefault(filename, []).append(function_name)
+
+    for filename, function_names in file_functions.items():
+        parts = []
+        for function_name in function_names:
+            body = overrides.get(filename, {}).get(
+                function_name, BASELINE_BODIES[function_name]
+            )
+            parts.append(textwrap.dedent(body))
+        (hooks_dir / filename).write_text("\n".join(parts))
+
     return hooks_dir
+
+
+def make_fake_registry_dir(tmp_path, monkeypatch, bodies):
+    """bodies: dict of filename -> override source for that file's
+    is_backlog_project function. Every other REGISTRY-required function in
+    every file gets its baseline (identical) stub, so only
+    is_backlog_project is perturbed.
+    """
+    return build_full_hooks_dir(
+        tmp_path,
+        overrides={
+            filename: {"is_backlog_project": body} for filename, body in bodies.items()
+        },
+    )
 
 
 def test_no_op_when_command_is_not_a_commit(monkeypatch, tmp_path):
@@ -91,6 +157,72 @@ def test_blocks_commit_when_function_missing_in_one_copy(monkeypatch, capsys, tm
     err = capsys.readouterr().err
     assert "is_backlog_project" in err
     assert "pre_push_check.py" in err
+    assert "찾을 수 없습니다" in err
+
+
+def test_registry_covers_newly_added_dedup_functions():
+    # TASK-9: command_invokes_git_subcommand/has_command/has_active_task/
+    # run_shell were hand-copied across several hook files without being
+    # registered here, so drift in them went undetected. current_branch is
+    # deliberately excluded (its return-value contract differs by file:
+    # empty string vs None), so it must never appear.
+    assert ddg.REGISTRY["command_invokes_git_subcommand"] == [
+        "pre_commit_check.py",
+        "pre_push_check.py",
+        "pre_merge_check.py",
+        "pre_push_coverage_check.py",
+        "dedup_drift_guard.py",
+    ]
+    assert ddg.REGISTRY["has_command"] == [
+        "block_stop_if_dirty.py",
+        "pre_commit_check.py",
+        "pre_push_check.py",
+        "require_active_task.py",
+        "session_start.py",
+    ]
+    assert ddg.REGISTRY["has_active_task"] == [
+        "block_stop_if_dirty.py",
+        "pre_commit_check.py",
+        "require_active_task.py",
+    ]
+    assert ddg.REGISTRY["run_shell"] == [
+        "pre_commit_check.py",
+        "pre_push_coverage_check.py",
+    ]
+    assert "current_branch" not in ddg.REGISTRY
+
+
+def test_allows_commit_when_all_registered_functions_identical(monkeypatch, tmp_path):
+    build_full_hooks_dir(tmp_path)
+    assert run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": COMMIT}) == 0
+
+
+def test_blocks_commit_when_has_command_drifts_in_one_copy(
+    monkeypatch, capsys, tmp_path
+):
+    build_full_hooks_dir(
+        tmp_path,
+        overrides={"session_start.py": {"has_command": DIFFERENT_HAS_COMMAND_BODY}},
+    )
+    code = run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": COMMIT})
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "has_command" in err
+    assert "session_start.py" in err
+
+
+def test_blocks_commit_when_has_command_missing_in_one_copy(
+    monkeypatch, capsys, tmp_path
+):
+    build_full_hooks_dir(
+        tmp_path,
+        overrides={"require_active_task.py": {"has_command": NO_FUNCTION_BODY}},
+    )
+    code = run_main(monkeypatch, {"cwd": str(tmp_path), "tool_input": COMMIT})
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "has_command" in err
+    assert "require_active_task.py" in err
     assert "찾을 수 없습니다" in err
 
 
