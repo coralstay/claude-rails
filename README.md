@@ -16,7 +16,7 @@ CLAUDE.md에 "이렇게 해주세요"라고 적어두는 약속만으로는 매�
 
 ## 무엇을 만들었는지 말씀드립니다
 
-Claude Code의 [hooks](https://code.claude.com/docs/en/hooks) 이벤트마다 동작하는
+Claude Code의 [hooks](https://code.claude.com/docs/ko/hooks) 이벤트마다 동작하는
 28개의 스크립트를 만들었습니다.
 [Backlog.md](https://github.com/MrLesk/Backlog.md)(Git 저장소 안에 마크다운 파일로
 태스크·문서·의사결정을 관리하는 CLI 기반 프로젝트 관리 도구입니다) 워크플로 전용
@@ -37,9 +37,63 @@ Claude Code의 [hooks](https://code.claude.com/docs/en/hooks) 이벤트마다 �
 
 ## 훅을 생애주기별로 정리해 드립니다
 
-Claude Code의 훅은 특정 이벤트(생애주기 단계)에 등록되어, 그 시점에만 실행됩니다.
-이 저장소에 있는 28개의 훅이 각각 어느 단계에서 동작하는지 아래 표로 정리해
-드립니다. 훅 이름을 누르시면 실제 소스 파일로 이동합니다.
+Claude Code의 훅은 [공식 문서](https://code.claude.com/docs/ko/hooks)에 정의된
+특정 이벤트(생애주기 단계)에 등록되어, 그 시점에만 실행됩니다. 전체 흐름을 먼저
+그림으로 보여드린 뒤, 이 저장소에 있는 28개의 훅이 각각 어느 단계에서 동작하는지
+표로 정리해 드리겠습니다.
+
+```mermaid
+flowchart TB
+    subgraph SESSION["세션 생애주기"]
+        direction LR
+        START(["SessionStart"])
+        SEND(["SessionEnd"])
+    end
+
+    subgraph LOOP["대화 루프 (반복)"]
+        direction TB
+        PROMPT["UserPromptSubmit"]
+        CLAUDE["Claude가 처리"]
+        subgraph TOOL["도구 호출 1회"]
+            direction TB
+            PRE["PreToolUse"]
+            PERM["PermissionRequest"]
+            EXEC["도구 실행"]
+            POST["PostToolUse"]
+            FAIL["PostToolUseFailure"]
+        end
+        STOP(["Stop"])
+    end
+
+    subgraph ETC["그 외 이벤트"]
+        direction TB
+        COMPACT["PreCompact"]
+        LOADED["InstructionsLoaded"]
+        CONFIG["ConfigChange"]
+    end
+
+    START --> PROMPT
+    PROMPT --> CLAUDE
+    CLAUDE --> PRE
+    PRE --> PERM
+    PERM --> EXEC
+    EXEC --> POST
+    EXEC -.실패.-> FAIL
+    POST --> CLAUDE
+    CLAUDE --> STOP
+    STOP --> PROMPT
+    STOP -.종료.-> SEND
+    PROMPT -.압축 필요 시.-> COMPACT
+    COMPACT -.-> PROMPT
+    LOADED -.지침 파일 로드 시.-> PROMPT
+    CONFIG -.설정 변경 시.-> LOOP
+```
+
+이 저장소의 훅은 이 흐름 중 필요한 지점마다 걸려 있습니다 — 예를 들어
+`require_active_task.py`는 `PreToolUse`(Edit\|Write)에, `block_stop_if_dirty.py`는
+`Stop`에 걸려서 각각 해당 시점의 행동을 검증합니다. 아래 표는 28개 훅 전체가 정확히
+어느 단계에 걸려 있는지 나열한 것입니다. 훅 이름을 누르시면 실제 소스 파일로
+이동합니다.
 
 | 생애주기                            | 훅                                                                 | 범위       | 하는 일                           |
 | ----------------------------------- | ------------------------------------------------------------------ | ---------- | --------------------------------- |
