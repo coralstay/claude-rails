@@ -188,3 +188,30 @@ def test_allows_interpreter_verbs_without_protected_path(monkeypatch):
     assert (
         cg.bash_targets_protected_config("wget https://example.com/file.txt") is False
     )
+
+
+def test_blocks_absolute_path_rm_on_settings_json(monkeypatch):
+    command = "/bin/rm /Users/x/.claude/settings.json"
+    assert cg.bash_targets_protected_config(command) is True
+    code = run_main(monkeypatch, "Bash", {"command": command})
+    assert code == 2
+
+
+def test_blocks_relative_path_rm_on_settings_json(monkeypatch):
+    command = "./rm /Users/x/.claude/settings.json"
+    assert cg.bash_targets_protected_config(command) is True
+
+
+def test_blocks_absolute_path_python3_writing_settings_json(monkeypatch):
+    command = "/usr/bin/python3 -c \"open('/Users/x/.claude/settings.json', 'w')\""
+    assert cg.bash_targets_protected_config(command) is True
+
+
+def test_allows_absolute_path_binary_on_unrelated_file(monkeypatch):
+    assert cg.bash_targets_protected_config("/bin/rm /tmp/scratch.txt") is False
+
+
+def test_allows_path_looking_verb_outside_verb_position(monkeypatch):
+    # "/bin/rm" appearing as a plain argument (not the leading verb of a
+    # subcommand) must not be treated as a mutating verb.
+    assert cg.bash_targets_protected_config("echo /bin/rm") is False
