@@ -1,7 +1,7 @@
 ---
-id: DRAFT-3
+id: TASK-9
 title: dedup_drift_guard.py REGISTRY 확장
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-19 01:25'
 updated_date: '2026-09-19 01:26'
