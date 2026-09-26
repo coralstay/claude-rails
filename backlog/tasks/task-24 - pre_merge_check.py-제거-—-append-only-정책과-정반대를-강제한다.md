@@ -1,7 +1,7 @@
 ---
-id: DRAFT-11
+id: TASK-24
 title: pre_merge_check.py 제거 — append-only 정책과 정반대를 강제한다
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-09-26 13:11'
 updated_date: '2026-09-26 13:11'
