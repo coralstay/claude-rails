@@ -3,7 +3,7 @@ id: doc-2
 title: claude-rails 상세 레퍼런스
 type: specification
 created_date: '2026-09-19 04:46'
-updated_date: '2026-09-19 13:07'
+updated_date: '2026-09-26 13:17'
 ---
 # claude-rails 상세 레퍼런스
 
@@ -404,7 +404,6 @@ MIT/오픈소스). 🔒 backlog.md 프로젝트 전용(`backlog/config.yml` 없�
 | [`dedup_drift_guard.py`](../../../hooks/dedup_drift_guard.py)        | `Bash(git *)`         |     | 이 저장소 자체를 지키는 self-guard — REGISTRY가 손으로 복붙된 함수 5개(`is_backlog_project`, `command_invokes_git_subcommand`, `has_command`, `has_active_task`, `run_shell`)가 어느 훅 파일들에 등장해야 하는지를 추적해, 사본 간에 어긋나면(정규화된 AST 비교) 커밋 시점에 차단. `backlog/config.yml` 유무와 무관하게 `hooks/` 디렉토리 존재만으로 동작 판단(즉 REGISTRY가 가리키는 파일들이 실제로 있는 저장소, 곧 claude-rails 자신에서만 작동) |
 | [`pre_push_check.py`](../../../hooks/pre_push_check.py)           | `Bash(git *)`         | 🔒  | `task/<ID>` 브랜치 push는 태스크가 Done && final summary 있을 때만 허용. bash 시절 `pre-push-check.sh`의 후신                                                                                                                                                                                                                                                                                                                                       |
 | [`pre_push_coverage_check.py`](../../../hooks/pre_push_coverage_check.py)  | `Bash(git *)`         |     | `.claude-rails.json`의 `coverageCommand` 설정 시 push 전 실제로 실행해 리포트를 보여줌(성공/실패 무관하게 매번), 실패 시에만 차단. 결과는 `<cwd>/.claude-rails/coverage-log.jsonl`에도 기록                                                                                                                                                                                                                                                         |
-| [`pre_merge_check.py`](../../../hooks/pre_merge_check.py)          | `Bash(git *)`         |     | fast-forward-only 병합 강제 — merge commit, `--no-ff` 등 명시적 우회도 차단                                                                                                                                                                                                                                                                                                                                                                         |
 | [`block_dangerous_commands.py`](../../../hooks/block_dangerous_commands.py) | (없음)                |     | 재앙적/고위험 셸 명령 차단. `HOOK_SAFETY_LEVEL`(critical\|high\|strict)로 룰셋 선택                                                                                                                                                                                                                                                                                                                                                                 |
 | [`pre_git_safety_check.py`](../../../hooks/pre_git_safety_check.py)     | `Bash(git *)`         |     | main/master 직접 push, 보호 브랜치 삭제, 파괴적 `gh` 작업(pr merge/close, issue close, release/repo delete) 차단                                                                                                                                                                                                                                                                                                                                    |
 | [`case_insensitive_guard.py`](../../../hooks/case_insensitive_guard.py)   | (없음)                |     | 대소문자만 다른 형제 경로가 있을 때 `rm -rf` 같은 삭제 명령이 의도치 않게 다른 대상을 지우지 않도록 방지(APFS/exFAT/NTFS 대응)                                                                                                                                                                                                                                                                                                                      |
@@ -679,3 +678,10 @@ claude-rails/
 대상 디렉토리(`~/.claude/hooks/claude-rails/`)에 `.coverage`/`.pytest_cache`가 실제로
 생기는 것도 테스트를 그 자리에서 그대로 돌리기 때문이다. `install.sh`도 이 컨벤션을
 그대로 따라 훅 본체와 테스트를 함께 설치한다.
+
+## 제거된 훅
+
+**`pre_merge_check.py`** (2026-09-26, TASK-24에서 제거) — fast-forward 전용 병합을
+강제했다. decision-10이 병합을 머지 커밋으로 바꾸면서 이 훅이 정책의 정반대를 강제하게 됐다.
+`decision-5`(항상 rebase merge)의 관찰은 정확했으나 결론이 뒤집혀 있었다 — rebase merge는
+committer 재작성을 없애지 않고 모든 커밋에 적용한다.

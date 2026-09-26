@@ -169,7 +169,6 @@ def test_registry_covers_newly_added_dedup_functions():
     assert ddg.REGISTRY["command_invokes_git_subcommand"] == [
         "pre_commit_check.py",
         "pre_push_check.py",
-        "pre_merge_check.py",
         "pre_push_coverage_check.py",
         "dedup_drift_guard.py",
     ]

@@ -4,6 +4,9 @@ title: push/원격 병합은 항상 사람이 최종 승인 — 로컬 fast-forw
 date: '2026-09-19 01:59'
 status: accepted
 ---
+> **2026-09-26: decision-10이 부분 대체.** "push·원격 병합은 사람이 최종 승인"은
+> 유효하다. "로컬 fast-forward까지만 자동화" 문구만 대체됐다 — 병합은 머지 커밋으로 한다.
+
 ## Context
 
 README 0장/7장이 이미 "Phase 4.3 push 전 코드 리뷰"를 Phase 2(백로그 승인)와 함께 훅으로

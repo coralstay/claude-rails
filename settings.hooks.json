@@ -83,11 +83,6 @@
           },
           {
             "type": "command",
-            "command": "python3 $HOME/.claude/hooks/claude-rails/pre_merge_check.py",
-            "if": "Bash(git *)"
-          },
-          {
-            "type": "command",
             "command": "python3 $HOME/.claude/hooks/claude-rails/block_dangerous_commands.py"
           },
           {

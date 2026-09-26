@@ -36,7 +36,6 @@ REGISTRY = {
     "command_invokes_git_subcommand": [
         "pre_commit_check.py",
         "pre_push_check.py",
-        "pre_merge_check.py",
         "pre_push_coverage_check.py",
         "dedup_drift_guard.py",
     ],
