@@ -1,7 +1,7 @@
 ---
-id: DRAFT-8
+id: TASK-55
 title: Sigkill Foundry 형식 설계 문서와 훅의 세 가지 성격
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-10-05 11:47'
 labels:
