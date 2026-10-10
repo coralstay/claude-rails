@@ -4,7 +4,7 @@ title: Sigkill Foundry 형식 설계 문서와 훅의 세 가지 성격
 status: In Progress
 assignee: []
 created_date: '2026-10-05 11:47'
-updated_date: '2026-10-05 12:10'
+updated_date: '2026-10-10 22:36'
 labels:
   - docs
 dependencies: []
@@ -27,5 +27,5 @@ dependencies: []
 - [ ] #1 design/ 구조·장 형식이 최상위 Sigkill Foundry와 같다
 - [ ] #2 3.01에 세 가지 성격과 32개 훅 분류표(누락·중복 없음, 근거는 각 훅 docstring)와 DOT 다이어그램이 있다
 - [ ] #3 1.01 · 1.02 · 4.03을 채우고 나머지는 골격으로 둔다, 진척 서술 없음
-- [ ] #4 Claude 앱에 장별 문서와 목차 문서를 만들고 design/README.md에 링크한다
+- [ ] #4 설계 문서의 원본은 design/ 하나다 — Claude 앱 편집 원본 문구 · 링크 칸을 두지 않고, 목차 상태는 실제 파일 기준
 <!-- AC:END -->

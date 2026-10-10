@@ -15,7 +15,7 @@
   색은 .dot(그리고 mermaid-theme.json)에 센티넬 hex(#f00001 …)로 적는다. 이 스크립트가
   센티넬을 CSS 변수(var(--diagram-*))로 치환하고, 그 변수를 SVG 안의 <style>에 정의한다 —
   라이트 값이 기본이고 @media (prefers-color-scheme: dark)가 다크 값으로 덮는다. 그래서
-  SVG 파일 하나가 장 Markdown의 ![](…svg) · GitHub <img> · Claude 앱 문서 어디서나
+  SVG 파일 하나가 장 Markdown의 ![](…svg) · GitHub <img> 어디서나
   보는 쪽 테마를 따라간다.
 
 빌드 전제: graphviz(`dot`), mermaid 렌더용 `npx` + 로컬 Chrome.
